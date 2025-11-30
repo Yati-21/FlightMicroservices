@@ -1,0 +1,5 @@
+package com.flight.service.entity;
+
+public enum FLIGHT_STATUS {
+	SCHEDULED, CANCELLED
+}

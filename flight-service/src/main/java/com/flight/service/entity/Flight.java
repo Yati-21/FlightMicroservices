@@ -1,0 +1,53 @@
+package com.flight.service.entity;
+
+import java.time.LocalDateTime;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Document(collection="flights")
+public class Flight {
+
+    @Id
+    private String id;
+
+    @NotBlank(message="airlineCode is required")
+    private String airlineCode;
+
+    @NotBlank(message="flightNumber is required")
+    private String flightNumber;
+
+    @NotNull(message="fromCity is required")
+    private AIRPORT_CODE fromCity;
+
+    @NotNull(message="toCity is required")
+    private AIRPORT_CODE toCity;
+
+    @NotNull(message="departureTime is required")
+    private LocalDateTime departureTime;
+
+    @NotNull(message="arrivalTime is required")
+    private LocalDateTime arrivalTime;
+
+    @Min(value=1, message="totalSeats>=1")
+    private int totalSeats;
+
+    @Min(value=0, message="availableSeats>=0")
+    private int availableSeats;
+
+    @Min(value=0, message="price>=0")
+    private float price;
+
+    @NotNull(message="status is required")
+    private FLIGHT_STATUS status;
+}
