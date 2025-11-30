@@ -4,21 +4,21 @@
 	<section name="java.lang.Class">
 		<item key="replaceBarOpen" value="true"/>
 		<list key="findhistory">
+			<item value="spring-boot-starter-test&lt;/artifactId&gt;"/>
+			<item value="test"/>
+			<item value="spring-boot-starter-web"/>
+			<item value="mvc"/>
 			<item value="circui"/>
+			<item value="load"/>
 			<item value="open"/>
 			<item value="savePassengers"/>
 			<item value="feign"/>
 			<item value="saveNewBooking"/>
 			<item value="checkSeatConflicts"/>
 			<item value="check"/>
-			<item value="load"/>
 			<item value="circ"/>
 			<item value="cir"/>
 			<item value="ciru"/>
-			<item value="feig"/>
-			<item value="circuit"/>
-			<item value="cancel"/>
-			<item value="cancelBook"/>
 		</list>
 		<list key="replacehistory">
 			<item value="="/>

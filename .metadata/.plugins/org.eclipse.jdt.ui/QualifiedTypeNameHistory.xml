@@ -22,4 +22,6 @@
     <fullyQualifiedTypeName name="reactor.core.scheduler.Schedulers"/>
     <fullyQualifiedTypeName name="io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker"/>
     <fullyQualifiedTypeName name="com.flight.service.client.AirlineClient"/>
+    <fullyQualifiedTypeName name="org.springframework.boot.webflux.test.autoconfigure.WebFluxTest"/>
+    <fullyQualifiedTypeName name="org.springframework.test.context.bean.override.mockito.MockitoBean"/>
 </qualifiedTypeNameHistroy>
