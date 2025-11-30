@@ -6,12 +6,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import com.booking.service.dto.UserDto;
 
-@FeignClient(
-        name = "user-service",
-        fallback = UserClientFallback.class
-)
+@FeignClient(name = "user-service")
 public interface UserClient {
 
-    @GetMapping("/users/{id}")
-    UserDto getUserById(@PathVariable String id);
+	@GetMapping("/users/{id}")
+	UserDto getUserById(@PathVariable String id);
+
+	@GetMapping("/users/email/{email}")
+	UserDto getUserByEmail(@PathVariable String email);
 }

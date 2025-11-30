@@ -1,0 +1,8 @@
+package com.booking.service.exception;
+
+public class BusinessException {
+	public BusinessException(String message) 
+	{
+		super(message);
+    }
+}

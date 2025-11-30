@@ -16,57 +16,55 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/users")
 public class UserController {
 
-    private static final String USER_NOT_FOUND = "User not found";
+	private static final String USER_NOT_FOUND = "User not found";
 
-    private final UserRepository userRepo;
+	private final UserRepository userRepo;
 
-    public UserController(UserRepository userRepo) {
-        this.userRepo = userRepo;
-    }
+	public UserController(UserRepository userRepo) {
+		this.userRepo = userRepo;
+	}
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public Mono<String> createUser(@RequestBody @Valid UserCreateRequest req) {
+	@PostMapping
+	@ResponseStatus(HttpStatus.CREATED)
+	public Mono<String> createUser(@RequestBody @Valid UserCreateRequest req) {
 
-        User u = new User();
-        u.setName(req.getName());
-        u.setEmail(req.getEmail());
+		User u = new User();
+		u.setName(req.getName());
+		u.setEmail(req.getEmail());
 
-        return userRepo.save(u).map(User::getId);
-    }
+		return userRepo.save(u).map(User::getId);
+	}
 
+	@GetMapping
+	public Flux<User> getAllUsers() {
+		return userRepo.findAll();
+	}
 
-    @GetMapping
-    public Flux<User> getAllUsers() {
-        return userRepo.findAll();
-    }
+	@GetMapping("/{id}")
+	public Mono<User> getUser(@PathVariable String id) {
+		return userRepo.findById(id).switchIfEmpty(Mono.error(new NotFoundException(USER_NOT_FOUND)));
+	}
 
+	@GetMapping("/email/{email}")
+	public Mono<User> getByEmail(@PathVariable String email) {
+		return userRepo.findByEmail(email)
+				.switchIfEmpty(Mono.error(new NotFoundException("User not found with email: " + email)));
+	}
 
-    @GetMapping("/{id}")
-    public Mono<User> getUser(@PathVariable String id) {
-        return userRepo.findById(id)
-                .switchIfEmpty(Mono.error(new NotFoundException(USER_NOT_FOUND)));
-    }
+	@PutMapping("/{id}")
+	public Mono<User> updateUser(@PathVariable String id, @RequestBody @Valid UserUpdateRequest req) {
 
+		return userRepo.findById(id).switchIfEmpty(Mono.error(new NotFoundException(USER_NOT_FOUND)))
+				.flatMap(existing -> {
+					existing.setName(req.getName());
+					existing.setEmail(req.getEmail());
+					return userRepo.save(existing);
+				});
+	}
 
-    @PutMapping("/{id}")
-    public Mono<User> updateUser(@PathVariable String id,
-                                 @RequestBody @Valid UserUpdateRequest req) {
-
-        return userRepo.findById(id)
-                .switchIfEmpty(Mono.error(new NotFoundException(USER_NOT_FOUND)))
-                .flatMap(existing -> {
-                    existing.setName(req.getName());
-                    existing.setEmail(req.getEmail());
-                    return userRepo.save(existing);
-                });
-    }
-
-
-    @DeleteMapping("/{id}")
-    public Mono<Void> deleteUser(@PathVariable String id) {
-        return userRepo.findById(id)
-                .switchIfEmpty(Mono.error(new NotFoundException(USER_NOT_FOUND)))
-                .flatMap(u -> userRepo.deleteById(id));
-    }
+	@DeleteMapping("/{id}")
+	public Mono<Void> deleteUser(@PathVariable String id) {
+		return userRepo.findById(id).switchIfEmpty(Mono.error(new NotFoundException(USER_NOT_FOUND)))
+				.flatMap(u -> userRepo.deleteById(id));
+	}
 }
