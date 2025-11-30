@@ -1,0 +1,43 @@
+package com.booking.service.entity;
+
+import java.util.List;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Document("bookings")
+public class Booking {
+
+    @Id
+    private String id;
+
+    private String pnr;
+
+    @NotBlank(message = "UserId is required")
+    private String userId;
+
+    @NotBlank(message = "FlightId is required")
+    private String flightId;
+
+    @Min(value = 1, message = "At least 1 seat must be booked")
+    private int seatsBooked;
+
+    @NotNull(message = "Meal type is required")
+    private MEAL_TYPE mealType;
+
+    @NotNull(message = "flightType is required")
+    private FLIGHT_TYPE flightType;
+
+    // list of passengerIds returned from passenger-service
+    private List<String> passengerIds;
+}

@@ -1,0 +1,5 @@
+package com.booking.service.entity;
+
+public class FLIGHT_TYPE {
+	 ONE_WAY,ROUND_TRIP
+}

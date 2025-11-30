@@ -1,0 +1,5 @@
+package com.booking.service.dto;
+
+public class FlightDto {
+
+}
