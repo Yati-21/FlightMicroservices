@@ -5,19 +5,17 @@ import java.time.LocalDate;
 import com.flight.service.entity.AIRPORT_CODE;
 
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter
-@Setter
+@Data
 public class FlightSearchRequest {
 
-	@NotNull(message = "from is required")
-	private AIRPORT_CODE from;
+    @NotNull(message = "fromCity is required")
+    private AIRPORT_CODE fromCity;
 
-	@NotNull(message = "to is required")
-	private AIRPORT_CODE to;
+    @NotNull(message = "toCity is required")
+    private AIRPORT_CODE toCity;
 
-	@NotNull(message = "date is required")
-	private LocalDate date;
+    @NotNull(message = "date is required")
+    private LocalDate date;
 }

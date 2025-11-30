@@ -6,9 +6,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import com.flight.service.dto.AirlineDto;
 
-@FeignClient(name = "airline-service")
+@FeignClient(name = "airline-service", fallback = AirlineClientFallback.class)
 public interface AirlineClient {
 
     @GetMapping("/airlines/{code}")
-    AirlineDto getAirline(@PathVariable String code);
+    AirlineDto getAirline(@PathVariable("code") String code);
 }

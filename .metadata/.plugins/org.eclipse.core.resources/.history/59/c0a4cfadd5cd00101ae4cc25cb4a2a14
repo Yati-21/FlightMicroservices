@@ -1,0 +1,51 @@
+package com.flight.service.controller;
+
+import java.time.LocalDate;
+
+import com.flight.service.entity.AIRPORT_CODE;
+import com.flight.service.entity.Flight;
+import com.flight.service.service.FlightService;
+
+import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+@RestController
+@RequestMapping("/flights")
+public class FlightController {
+
+    private final FlightService service;
+
+    public FlightController(FlightService service) {
+        this.service = service;
+    }
+
+    @PostMapping("/add")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Mono<String> addFlight(@RequestBody @Valid Flight flight) {
+        return service.addFlight(flight).map(Flight::getId);
+    }
+
+    // Search using query params: /flights/search?from=DEL&to=BOM&date=2030-01-01
+    @GetMapping("/search")
+    public Flux<Flight> searchFlights(@RequestParam("from") AIRPORT_CODE from,
+                                      @RequestParam("to") AIRPORT_CODE to,
+                                      @RequestParam("date")
+                                      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return service.searchFlights(from, to, date);
+    }
+
+    @GetMapping("/get/{flightId}")
+    public Mono<Flight> getFlight(@PathVariable String flightId) {
+        return service.getFlightById(flightId);
+    }
+
+    @GetMapping("/airline/{code}")
+    public Flux<Flight> getFlightsByAirline(@PathVariable("code") String airlineCode) {
+        return service.getFlightsByAirline(airlineCode);
+    }
+}

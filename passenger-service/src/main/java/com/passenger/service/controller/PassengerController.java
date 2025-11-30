@@ -1,9 +1,8 @@
 package com.passenger.service.controller;
 
 import com.passenger.service.entity.Passenger;
-import com.passenger.service.exception.NotFoundException;
-import com.passenger.service.repository.PassengerRepository;
-import com.passenger.service.request.PassengerRequest;
+import com.passenger.service.request.PassengerCreateRequest;
+import com.passenger.service.service.PassengerService;
 
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -15,29 +14,26 @@ import reactor.core.publisher.Mono;
 @RestController
 @RequestMapping("/passengers")
 public class PassengerController {
-	private final PassengerRepository passengerRepo;
 
-	public PassengerController(PassengerRepository passengerRepo) {
-		this.passengerRepo = passengerRepo;
-	}
+    private final PassengerService service;
 
-	@PostMapping
-	@ResponseStatus(HttpStatus.CREATED)
-	public Mono<String> addPassenger(@Valid @RequestBody PassengerRequest req) {
+    public PassengerController(PassengerService service) {
+        this.service = service;
+    }
 
-		Passenger p = new Passenger(null, req.getName(), req.getGender(), req.getAge(), req.getSeatNumber(),
-				req.getBookingId());
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public Mono<String> createPassenger(@RequestBody @Valid PassengerCreateRequest req) {
+        return service.createPassenger(req);
+    }
 
-		return passengerRepo.save(p).map(Passenger::getId);
-	}
+    @GetMapping("/booking/{bookingId}")
+    public Flux<Passenger> getPassengersByBooking(@PathVariable String bookingId) {
+        return service.getByBookingId(bookingId);
+    }
 
-	@GetMapping("/booking/{bookingId}")
-	public Flux<Passenger> getPassengersByBooking(@PathVariable String bookingId) {
-		return passengerRepo.findByBookingId(bookingId);
-	}
-
-	@DeleteMapping("/booking/{bookingId}")
-	public Mono<Void> deleteByBooking(@PathVariable String bookingId) {
-		return passengerRepo.deleteByBookingId(bookingId);
-	}
+    @DeleteMapping("/booking/{bookingId}")
+    public Mono<Void> deleteByBooking(@PathVariable String bookingId) {
+        return service.deleteByBookingId(bookingId);
+    }
 }

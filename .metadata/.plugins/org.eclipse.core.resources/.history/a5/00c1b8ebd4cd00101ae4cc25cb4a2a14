@@ -1,0 +1,20 @@
+package com.flight.service.service;
+
+import java.time.LocalDate;
+
+import com.flight.service.entity.AIRPORT_CODE;
+import com.flight.service.entity.Flight;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+public interface FlightService {
+
+    Mono<Flight> addFlight(Flight flight);
+
+    Flux<Flight> searchFlights(AIRPORT_CODE from, AIRPORT_CODE to, LocalDate date);
+
+    Mono<Flight> getFlightById(String flightId);
+
+    Flux<Flight> getFlightsByAirline(String airlineCode);
+}
