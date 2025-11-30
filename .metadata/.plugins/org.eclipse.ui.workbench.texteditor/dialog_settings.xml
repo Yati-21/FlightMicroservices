@@ -2,10 +2,14 @@
 <section name="Workbench">
 	<item key="hasShownOverlayPopupBefore" value="true"/>
 	<section name="java.lang.Class">
-		<item key="replaceBarOpen" value="false"/>
+		<item key="replaceBarOpen" value="true"/>
 		<list key="findhistory">
+			<item value=" = "/>
 			<item value="circui"/>
 			<item value="feign"/>
+		</list>
+		<list key="replacehistory">
+			<item value="="/>
 		</list>
 	</section>
 </section>

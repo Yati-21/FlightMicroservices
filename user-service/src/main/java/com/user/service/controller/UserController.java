@@ -1,0 +1,72 @@
+package com.user.service.controller;
+
+import com.user.service.entity.User;
+import com.user.service.exception.NotFoundException;
+import com.user.service.repository.UserRepository;
+import com.user.service.request.UserCreateRequest;
+import com.user.service.request.UserUpdateRequest;
+
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+@RestController
+@RequestMapping("/users")
+public class UserController {
+
+    private static final String USER_NOT_FOUND = "User not found";
+
+    private final UserRepository userRepo;
+
+    public UserController(UserRepository userRepo) {
+        this.userRepo = userRepo;
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public Mono<String> createUser(@RequestBody @Valid UserCreateRequest req) {
+
+        User u = new User();
+        u.setName(req.getName());
+        u.setEmail(req.getEmail());
+
+        return userRepo.save(u).map(User::getId);
+    }
+
+
+    @GetMapping
+    public Flux<User> getAllUsers() {
+        return userRepo.findAll();
+    }
+
+
+    @GetMapping("/{id}")
+    public Mono<User> getUser(@PathVariable String id) {
+        return userRepo.findById(id)
+                .switchIfEmpty(Mono.error(new NotFoundException(USER_NOT_FOUND)));
+    }
+
+
+    @PutMapping("/{id}")
+    public Mono<User> updateUser(@PathVariable String id,
+                                 @RequestBody @Valid UserUpdateRequest req) {
+
+        return userRepo.findById(id)
+                .switchIfEmpty(Mono.error(new NotFoundException(USER_NOT_FOUND)))
+                .flatMap(existing -> {
+                    existing.setName(req.getName());
+                    existing.setEmail(req.getEmail());
+                    return userRepo.save(existing);
+                });
+    }
+
+
+    @DeleteMapping("/{id}")
+    public Mono<Void> deleteUser(@PathVariable String id) {
+        return userRepo.findById(id)
+                .switchIfEmpty(Mono.error(new NotFoundException(USER_NOT_FOUND)))
+                .flatMap(u -> userRepo.deleteById(id));
+    }
+}
