@@ -5,11 +5,17 @@
 		<item key="replaceBarOpen" value="true"/>
 		<list key="findhistory">
 			<item value=" = "/>
+			<item value=", "/>
+			<item value=" -&gt;"/>
+			<item value=" + "/>
 			<item value="circui"/>
 			<item value="feign"/>
 		</list>
 		<list key="replacehistory">
 			<item value="="/>
+			<item value=","/>
+			<item value="-&gt;"/>
+			<item value="+"/>
 		</list>
 	</section>
 </section>

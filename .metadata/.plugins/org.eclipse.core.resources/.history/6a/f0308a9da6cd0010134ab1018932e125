@@ -1,0 +1,5 @@
+package com.passenger.service.entity;
+
+public class Passenger {
+
+}
