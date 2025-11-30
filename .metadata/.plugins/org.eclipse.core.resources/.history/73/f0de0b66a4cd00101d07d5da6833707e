@@ -1,0 +1,5 @@
+package com.airline.service.request;
+
+public class AirlineUpdateRequest {
+
+}

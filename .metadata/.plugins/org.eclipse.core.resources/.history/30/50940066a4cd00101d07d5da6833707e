@@ -1,0 +1,5 @@
+package com.airline.service.controller;
+
+public class AirlineController {
+
+}

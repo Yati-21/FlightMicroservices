@@ -1,0 +1,13 @@
+spring.application.name=config-server
+server.port=8888
+
+# point to your GitHub repo that holds the *.properties files
+spring.cloud.config.server.git.uri=https://github.com/Yati-21/flight-config.git
+
+# (optional) register config-server with Eureka
+eureka.client.service-url.defaultZone=http://localhost:8761/eureka/
+eureka.client.register-with-eureka=true
+eureka.client.fetch-registry=true
+
+# enable actuator endpoints if needed
+management.endpoints.web.exposure.include=*

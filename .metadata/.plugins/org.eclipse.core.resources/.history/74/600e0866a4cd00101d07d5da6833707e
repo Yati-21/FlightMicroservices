@@ -1,0 +1,5 @@
+package com.airline.service.exception;
+
+public class NotFoundException {
+
+}

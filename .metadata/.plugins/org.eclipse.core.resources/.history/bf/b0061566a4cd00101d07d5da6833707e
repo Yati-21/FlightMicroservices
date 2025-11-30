@@ -1,0 +1,5 @@
+package com.airline.service.entity;
+
+public class Airline {
+
+}
