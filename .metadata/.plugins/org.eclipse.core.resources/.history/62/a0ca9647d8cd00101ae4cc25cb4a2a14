@@ -1,0 +1,125 @@
+package com.user.service.service;
+
+import com.user.service.entity.User;
+import com.user.service.exception.NotFoundException;
+import com.user.service.repository.UserRepository;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
+
+class UserServiceImplTest {
+
+    @Mock
+    private UserRepository userRepo;
+
+    @InjectMocks
+    private UserServiceImpl userService;
+
+    private User user;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+        user = new User("1", "Jay", "jay@mail.com");
+    }
+
+    // ----------------------------------------------------
+    // GET USER BY ID
+    // ----------------------------------------------------
+    @Test
+    void testGetUserById_success() {
+
+        Mockito.when(userRepo.findById("1"))
+                .thenReturn(Mono.just(user));
+
+        StepVerifier.create(userService.getUserById("1"))
+                .expectNextMatches(u -> u.getName().equals("Jay"))
+                .verifyComplete();
+    }
+
+    @Test
+    void testGetUserById_notFound() {
+
+        Mockito.when(userRepo.findById("100"))
+                .thenReturn(Mono.empty());
+
+        StepVerifier.create(userService.getUserById("100"))
+                .expectErrorMatches(e ->
+                        e instanceof NotFoundException &&
+                                e.getMessage().equals("User not found"))
+                .verify();
+    }
+
+    // ----------------------------------------------------
+    // GET USER BY EMAIL
+    // ----------------------------------------------------
+    @Test
+    void testGetUserByEmail_success() {
+
+        Mockito.when(userRepo.findByEmail("jay@mail.com"))
+                .thenReturn(Mono.just(user));
+
+        StepVerifier.create(userService.getUserByEmail("jay@mail.com"))
+                .expectNextMatches(u -> u.getId().equals("1"))
+                .verifyComplete();
+    }
+
+    @Test
+    void testGetUserByEmail_notFound() {
+
+        Mockito.when(userRepo.findByEmail("no@mail.com"))
+                .thenReturn(Mono.empty());
+
+        StepVerifier.create(userService.getUserByEmail("no@mail.com"))
+                .expectErrorMatches(e -> e instanceof NotFoundException)
+                .verify();
+    }
+
+    // ----------------------------------------------------
+    // CREATE USER
+    // ----------------------------------------------------
+    @Test
+    void testCreateUser_success() {
+
+        User req = new User(null, "Riya", "riya@mail.com");
+        User saved = new User("9", "Riya", "riya@mail.com");
+
+        Mockito.when(userRepo.save(req))
+                .thenReturn(Mono.just(saved));
+
+        StepVerifier.create(userService.createUser(req))
+                .expectNextMatches(u -> u.getId().equals("9"))
+                .verifyComplete();
+    }
+
+    // ----------------------------------------------------
+    // DELETE USER
+    // ----------------------------------------------------
+    @Test
+    void testDeleteUser_success() {
+
+        Mockito.when(userRepo.existsById("1")).thenReturn(Mono.just(true));
+        Mockito.when(userRepo.deleteById("1")).thenReturn(Mono.empty());
+
+        StepVerifier.create(userService.deleteUser("1"))
+                .verifyComplete();
+    }
+
+    @Test
+    void testDeleteUser_notFound() {
+
+        Mockito.when(userRepo.existsById("100")).thenReturn(Mono.just(false));
+
+        StepVerifier.create(userService.deleteUser("100"))
+                .expectErrorMatches(e -> e instanceof NotFoundException)
+                .verify();
+    }
+}

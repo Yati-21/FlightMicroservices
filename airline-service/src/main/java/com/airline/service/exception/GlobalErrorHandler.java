@@ -18,7 +18,6 @@ public class GlobalErrorHandler {
 
     private static final String ERROR = "error";
 
-    // validation errors (@Valid)
     @ExceptionHandler(WebExchangeBindException.class)
     public Mono<ResponseEntity<Map<String, Object>>> handleValidationErrors(WebExchangeBindException ex) {
 
@@ -42,8 +41,8 @@ public class GlobalErrorHandler {
 
     @ExceptionHandler(NotFoundException.class)
     public Mono<ResponseEntity<Map<String, String>>> handleNotFound(NotFoundException ex) {
-        Map<String, String> error = Map.of(ERROR, ex.getMessage());
-        return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).body(error));
+        return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of(ERROR, ex.getMessage())));
     }
 
     @ExceptionHandler(Exception.class)
@@ -52,7 +51,8 @@ public class GlobalErrorHandler {
                 .trim()
                 .replace("\n", " ")
                 .replace("\r", " ");
-        Map<String, String> error = Map.of(ERROR, "Unexpected error: " + raw);
-        return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error));
+
+        return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(ERROR, "Unexpected error: " + raw)));
     }
 }

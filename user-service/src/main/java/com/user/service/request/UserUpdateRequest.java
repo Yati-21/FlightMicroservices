@@ -7,10 +7,10 @@ import lombok.Data;
 @Data
 public class UserUpdateRequest {
 
-    @NotBlank(message = "User name is required")
+    @NotBlank(message = "name is required")
     private String name;
 
-    @Email(message = "Invalid email format")
-    @NotBlank(message = "Email is required")
+    @NotBlank(message = "email is required")
+    @Email(message = "invalid email")
     private String email;
 }

@@ -1,0 +1,48 @@
+package com.user.service.controller;
+
+import com.user.service.entity.User;
+import com.user.service.service.UserService;
+
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.reactive.server.WebTestClient;
+
+import reactor.core.publisher.Mono;
+
+@WebFluxTest(UserController.class)
+class UserControllerTest {
+
+	@Autowired
+	private WebTestClient webTestClient;
+
+	@MockitoBean
+	private UserService userService;
+
+	@Test
+	void testGetUserById() {
+
+		User user = new User("1", "Jay", "jay@mail.com");
+
+		Mockito.when(userService.getUserById("1")).thenReturn(Mono.just(user));
+
+		webTestClient.get().uri("/users/1").exchange().expectStatus().isOk().expectBody().jsonPath("$.name")
+				.isEqualTo("Jay");
+	}
+
+	@Test
+	void testCreateUser() {
+
+		User req = new User(null, "Riya", "riya@mail.com");
+		User saved = new User("9", "Riya", "riya@mail.com");
+
+		Mockito.when(userService.createUser(req)).thenReturn(Mono.just(saved));
+
+		webTestClient.post().uri("/users").contentType(MediaType.APPLICATION_JSON).bodyValue(req).exchange()
+				.expectStatus().isCreated().expectBody().jsonPath("$.id").isEqualTo("9");
+	}
+}

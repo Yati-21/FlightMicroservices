@@ -1,87 +1,118 @@
 package com.user.service.controller;
 
 import com.user.service.entity.User;
-import com.user.service.repository.UserRepository;
 import com.user.service.request.UserCreateRequest;
 import com.user.service.request.UserUpdateRequest;
-import com.user.service.exception.GlobalErrorHandler;
-import org.junit.jupiter.api.Test;
+import com.user.service.service.UserService;
+
 import org.junit.jupiter.api.BeforeEach;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.junit.jupiter.api.Test;
+
+import org.mockito.Mockito;
 import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-
-@WebFluxTest(controllers=UserController.class)
-@Import(GlobalErrorHandler.class)
-class UserControllerTest 
-{
-    @Autowired
-    private WebTestClient webTestClient;
+@WebFluxTest(UserController.class)
+public class UserControllerTest {
 
     @MockitoBean
-    private UserRepository userRepo;
+    private UserService service;
 
-    private User sampleUser;
+    private WebTestClient client;
 
     @BeforeEach
-    void setup() 
-    {
-        sampleUser =new User();
-        sampleUser.setId("user1");
-        sampleUser.setName("abc");
-        sampleUser.setEmail("abc@test.com");
+    void setup(WebTestClient client) {
+        this.client = client;
     }
 
     @Test
-    void createUserSuccess() 
-    {
-        UserCreateRequest req=new UserCreateRequest();
-        req.setName("abc" );
-        req.setEmail("abc@test.com");
-        when(userRepo.save(any(User.class))).thenReturn(Mono.just(sampleUser));
-        webTestClient.post().uri("/users").contentType(MediaType.APPLICATION_JSON).bodyValue(req)
-                .exchange().expectStatus().isCreated().expectBody(String.class)
-                .isEqualTo("user1");
+    void testCreateUser() {
+        UserCreateRequest req = new UserCreateRequest();
+        req.setName("Jay");
+        req.setEmail("jay@mail.com");
+
+        User saved = new User("1", "Jay", "jay@mail.com");
+
+        Mockito.when(service.createUser(Mockito.any())).thenReturn(Mono.just(saved));
+
+        client.post().uri("/users")
+                .bodyValue(req)
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody()
+                .jsonPath("$.id").isEqualTo("1")
+                .jsonPath("$.name").isEqualTo("Jay");
     }
 
     @Test
-    void getUserSuccess() 
-    {
-        when(userRepo.findById("user1")).thenReturn(Mono.just(sampleUser));
-        webTestClient.get().uri("/users/user1").exchange().expectStatus().isOk().expectBody()
-                .jsonPath( "$.id").isEqualTo("user1").jsonPath("$.email").isEqualTo("abc@test.com");
-    }
+    void testGetUser() {
+        User user = new User("1", "Jay", "jay@mail.com");
 
+        Mockito.when(service.getUser("1")).thenReturn(Mono.just(user));
 
-    @Test
-    void updateUserSuccess() 
-    {
-        UserUpdateRequest req=new UserUpdateRequest();
-        req.setName("abc update");
-        req.setEmail("abc2@test.com");
-
-        User update=new User("user1",req.getName(),req.getEmail());
-
-        when(userRepo.findById("user1")).thenReturn(Mono.just(sampleUser));
-        when(userRepo.save(any(User.class))).thenReturn(Mono.just(update));
-        webTestClient.put().uri("/users/user1").contentType(MediaType.APPLICATION_JSON).bodyValue(req)
-                .exchange().expectStatus().isOk().expectBody()
-                .jsonPath("$.name").isEqualTo("abc update").jsonPath("$.email").isEqualTo("abc2@test.com");
+        client.get().uri("/users/1")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.name").isEqualTo("Jay");
     }
 
     @Test
-    void deleteUserSuccess() 
-    {
-        when(userRepo.findById("user1")).thenReturn(Mono.just(sampleUser));
-        when(userRepo.deleteById("user1")).thenReturn(Mono.empty());
-        webTestClient.delete().uri("/users/user1").exchange().expectStatus().isOk();
+    void testGetByEmail() {
+        User user = new User("1", "Jay", "jay@mail.com");
+
+        Mockito.when(service.getByEmail("jay@mail.com")).thenReturn(Mono.just(user));
+
+        client.get().uri("/users/email/jay@mail.com")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.id").isEqualTo("1");
     }
 
+    @Test
+    void testUpdateUser() {
+        UserUpdateRequest req = new UserUpdateRequest();
+        req.setName("New");
+        req.setEmail("new@mail.com");
+
+        User updated = new User("1", "New", "new@mail.com");
+
+        Mockito.when(service.updateUser(Mockito.eq("1"), Mockito.any()))
+                .thenReturn(Mono.just(updated));
+
+        client.put().uri("/users/1")
+                .bodyValue(req)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.name").isEqualTo("New");
+    }
+
+    @Test
+    void testDeleteUser() {
+        Mockito.when(service.deleteUser("1")).thenReturn(Mono.empty());
+
+        client.delete().uri("/users/1")
+                .exchange()
+                .expectStatus().isOk();
+    }
+
+    @Test
+    void testGetAllUsers() {
+        User u1 = new User("1", "Jay", "jay@mail.com");
+        User u2 = new User("2", "Riya", "riya@mail.com");
+
+        Mockito.when(service.getAllUsers())
+                .thenReturn(Flux.just(u1, u2));
+
+        client.get().uri("/users")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$[0].name").isEqualTo("Jay");
+    }
 }

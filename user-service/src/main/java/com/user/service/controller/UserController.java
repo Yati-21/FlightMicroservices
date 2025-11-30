@@ -17,40 +17,40 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/users")
 public class UserController {
 
-    private final UserService service;
+	private final UserService service;
 
-    public UserController(UserService service) {
-        this.service = service;
-    }
+	public UserController(UserService service) {
+		this.service = service;
+	}
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public Mono<String> createUser(@RequestBody @Valid UserCreateRequest req) {
-        return service.createUser(req);
-    }
+	@PostMapping
+	@ResponseStatus(HttpStatus.CREATED)
+	public Mono<User> createUser(@RequestBody @Valid UserCreateRequest req) {
+		return service.createUser(req);
+	}
 
-    @GetMapping("/{id}")
-    public Mono<User> getUserById(@PathVariable String id) {
-        return service.getUserById(id);
-    }
+	@GetMapping("/{id}")
+	public Mono<User> getUser(@PathVariable String id) {
+		return service.getUser(id);
+	}
 
-    @GetMapping("/email/{email}")
-    public Mono<User> getUserByEmail(@PathVariable String email) {
-        return service.getUserByEmail(email);
-    }
+	@GetMapping("/email/{email}")
+	public Mono<User> getByEmail(@PathVariable String email) {
+		return service.getByEmail(email);
+	}
 
-    @GetMapping
-    public Flux<User> getAllUsers() {
-        return service.getAllUsers();
-    }
+	@PutMapping("/{id}")
+	public Mono<User> updateUser(@PathVariable String id, @RequestBody @Valid UserUpdateRequest req) {
+		return service.updateUser(id, req);
+	}
 
-    @PutMapping("/{id}")
-    public Mono<User> update(@PathVariable String id, @RequestBody @Valid UserUpdateRequest req) {
-        return service.updateUser(id, req);
-    }
+	@GetMapping
+	public Flux<User> getAll() {
+		return service.getAllUsers();
+	}
 
-    @DeleteMapping("/{id}")
-    public Mono<Void> delete(@PathVariable String id) {
-        return service.deleteUser(id);
-    }
+	@DeleteMapping("/{id}")
+	public Mono<Void> deleteUser(@PathVariable String id) {
+		return service.deleteUser(id);
+	}
 }

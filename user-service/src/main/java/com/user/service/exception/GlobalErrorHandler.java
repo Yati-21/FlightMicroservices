@@ -14,36 +14,25 @@ import reactor.core.publisher.Mono;
 @RestControllerAdvice
 public class GlobalErrorHandler {
 
-    @ExceptionHandler(WebExchangeBindException.class)
-    public Mono<ResponseEntity<Map<String, Object>>> handleValidation(WebExchangeBindException ex) {
+	@ExceptionHandler(WebExchangeBindException.class)
+	public Mono<ResponseEntity<Map<String, Object>>> handleValidation(WebExchangeBindException ex) {
 
-        List<FieldError> errors = ex.getFieldErrors();
+		List<FieldError> errors = ex.getFieldErrors();
 
-        Map<String, String> fieldMap = errors.stream()
-                .collect(Collectors.toMap(
-                        FieldError::getField,
-                        FieldError::getDefaultMessage,
-                        (a, b) -> a + "; " + b
-                ));
+		Map<String, String> fieldMap = errors.stream()
+				.collect(Collectors.toMap(FieldError::getField, FieldError::getDefaultMessage, (a, b) -> a + "; " + b));
 
-        return Mono.just(
-                ResponseEntity.badRequest().body(
-                        Map.of("errors", fieldMap, "message", "Validation failed")
-                )
-        );
-    }
+		return Mono.just(ResponseEntity.badRequest().body(Map.of("errors", fieldMap, "message", "Validation failed")));
+	}
 
-    @ExceptionHandler(NotFoundException.class)
-    public Mono<ResponseEntity<Map<String, String>>> handleNotFound(NotFoundException ex) {
-        return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("error", ex.getMessage())));
-    }
+	@ExceptionHandler(NotFoundException.class)
+	public Mono<ResponseEntity<Map<String, String>>> handleNotFound(NotFoundException ex) {
+		return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage())));
+	}
 
-    @ExceptionHandler(Exception.class)
-    public Mono<ResponseEntity<Map<String, String>>> handleGeneral(Exception ex) {
-        return Mono.just(
-                ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(Map.of("error", ex.getMessage()))
-        );
-    }
+	@ExceptionHandler(Exception.class)
+	public Mono<ResponseEntity<Map<String, String>>> handleGeneral(Exception ex) {
+		return Mono
+				.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", ex.getMessage())));
+	}
 }

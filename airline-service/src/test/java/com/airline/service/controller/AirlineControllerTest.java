@@ -1,84 +1,81 @@
 package com.airline.service.controller;
 
 import com.airline.service.entity.Airline;
-import com.airline.service.repository.AirlineRepository;
 import com.airline.service.request.AirlineCreateRequest;
 import com.airline.service.request.AirlineUpdateRequest;
-import com.airline.service.exception.GlobalErrorHandler;
-import org.junit.jupiter.api.BeforeEach;
+import com.airline.service.service.AirlineService;
+
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.MediaType;
+import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+@WebFluxTest(controllers = AirlineController.class)
+public class AirlineControllerTest {
 
-@org.springframework.boot.webflux.test.autoconfigure.WebFluxTest(controllers=AirlineController.class)
-@Import(GlobalErrorHandler.class)
-class AirlineControllerTest 
-{
-    @Autowired
-    private WebTestClient webTestClient;
+	@Autowired
+	private WebTestClient webTestClient;
 
-    @MockitoBean
-    private AirlineRepository airlineRepo;
+	@MockitoBean
+	private AirlineService service;
 
-    private Airline sample;
+	@Test
+	void testCreateAirline() {
+		AirlineCreateRequest req = new AirlineCreateRequest();
+		req.setCode("AI");
+		req.setName("Air India");
 
-    @BeforeEach
-    void setup() 
-    {
-        sample =new Airline("AI","Air india");
-    }
+		Airline saved = new Airline("AI", "Air India");
 
-    @Test
-    void createAirlineSuccess() 
-    {
-        AirlineCreateRequest req= new AirlineCreateRequest();
-        req.setCode("AI");
-        req.setName("Air india");
-        when(airlineRepo.save(any(Airline.class))).thenReturn(Mono.just(sample));
-        webTestClient.post()
-                .uri("/airlines").contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(req).exchange().expectStatus().isCreated().expectBody(String.class).isEqualTo("AI");
-    }
+		Mockito.when(service.createAirline(req)).thenReturn(Mono.just(saved));
 
-    @Test
-    void getAllAirlines() 
-    {
-        when(airlineRepo.findAll()).thenReturn(Flux.just(sample));
-        webTestClient.get()
-                .uri("/airlines")
-                .exchange().expectStatus().isOk().expectBody()
-                .jsonPath("$[0].code").isEqualTo("AI");
-    }
+		webTestClient.post().uri("/airlines").bodyValue(req).exchange().expectStatus().isCreated().expectBody()
+				.jsonPath("$.code").isEqualTo("AI").jsonPath("$.name").isEqualTo("Air India");
+	}
 
-    @Test
-    void updateAirlineSuccess() 
-    {
-        AirlineUpdateRequest req =new AirlineUpdateRequest();
-        req.setName("Ai update");
-        Airline updated= new Airline("AI","Ai update");
-        when(airlineRepo.findById("AI")).thenReturn(Mono.just(sample));
-        when(airlineRepo.save(any(Airline.class))).thenReturn(Mono.just(updated));
-        webTestClient.put()
-                .uri("/airlines/AI")
-                .contentType(MediaType.APPLICATION_JSON).bodyValue(req)
-                .exchange().expectStatus().isOk().expectBody()
-                .jsonPath("$.name").isEqualTo("Ai update");
-    }
+	@Test
+	void testGetAirline() {
+		Airline airline = new Airline("AI", "Air India");
 
-    @Test
-    void deleteAirlineSuccess() 
-    {
-        when(airlineRepo.findById("AI")).thenReturn(Mono.just(sample));
-        when(airlineRepo.deleteById("AI")).thenReturn(Mono.empty());
-        webTestClient.delete().uri("/airlines/AI").exchange().expectStatus().isOk();
-    }
+		Mockito.when(service.getAirline("AI")).thenReturn(Mono.just(airline));
 
+		webTestClient.get().uri("/airlines/AI").exchange().expectStatus().isOk().expectBody().jsonPath("$.name")
+				.isEqualTo("Air India");
+	}
+
+	@Test
+	void testGetAllAirlines() {
+		Airline a1 = new Airline("AI", "Air India");
+		Airline a2 = new Airline("EM", "Emirates");
+
+		Mockito.when(service.getAllAirlines()).thenReturn(Flux.just(a1, a2));
+
+		webTestClient.get().uri("/airlines").exchange().expectStatus().isOk().expectBody().jsonPath("$[0].code")
+				.isEqualTo("AI").jsonPath("$[1].code").isEqualTo("EM");
+	}
+
+	@Test
+	void testUpdateAirline() {
+		AirlineUpdateRequest req = new AirlineUpdateRequest();
+		req.setName("New Name");
+
+		Airline updated = new Airline("AI", "New Name");
+
+		Mockito.when(service.updateAirline("AI", req)).thenReturn(Mono.just(updated));
+
+		webTestClient.put().uri("/airlines/AI").bodyValue(req).exchange().expectStatus().isOk().expectBody()
+				.jsonPath("$.name").isEqualTo("New Name");
+	}
+
+	@Test
+	void testDeleteAirline() {
+		Mockito.when(service.deleteAirline("AI")).thenReturn(Mono.empty());
+
+		webTestClient.delete().uri("/airlines/AI").exchange().expectStatus().isOk();
+	}
 }
