@@ -49,6 +49,13 @@ public class BookingServiceImpl implements BookingService {
 	@Override
 	public Mono<String> bookTicket(BookingRequest request) {
 
+		// check passenger count
+		if (request.getPassengers().size() != request.getSeatsBooked()) {
+			return Mono.error(new BusinessException("Passengers count must be equal to seats booked"));
+		}
+		// check duplicate seats in request itself
+		validatePassengerDuplicateRequest(request.getPassengers());
+
 		// validate user via user-service
 //        UserDto user;
 //        try {
@@ -60,6 +67,7 @@ public class BookingServiceImpl implements BookingService {
 //        if (user.getId() == null) {
 //            throw new NotFoundException("User not found");
 //        }
+		// Wrap Feign calls in reactive style + circuit breaker
 		Mono<UserDto> userMono = Mono.fromCallable(() -> userClient.getUserById(request.getUserId()))
 				.subscribeOn(Schedulers.boundedElastic())
 				.onErrorResume(e -> Mono.error(new NotFoundException("User not found"))).flatMap(user -> {
@@ -87,13 +95,7 @@ public class BookingServiceImpl implements BookingService {
 					return Mono.just(flight);
 				});
 
-		// check passenger count
-		if (request.getPassengers().size() != request.getSeatsBooked()) {
-			return Mono.error(new BusinessException("Passengers count must be equal to seats booked"));
-		}
 
-		// check duplicate seats in request itself
-		validatePassengerDuplicateRequest(request.getPassengers());
 
 		// --- FINAL REACTIVE PIPELINE ---
 		return userMono.zipWith(flightMono).flatMap(tuple -> {

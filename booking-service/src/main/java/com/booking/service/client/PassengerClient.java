@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import com.booking.service.dto.PassengerCreateRequest;
 import com.booking.service.dto.PassengerDto;
 
-@FeignClient(name = "passenger-service")
+@FeignClient(name = "passenger-service",fallback = PassengerClientFallback.class)
 public interface PassengerClient {
 
     @PostMapping("/passengers")
