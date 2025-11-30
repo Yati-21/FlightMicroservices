@@ -13,4 +13,3 @@ public class PassengerDto {
     private String seatNumber;
     private String bookingId;
 }
-

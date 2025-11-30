@@ -1,0 +1,57 @@
+package com.booking.service.exception;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.support.WebExchangeBindException;
+
+import com.booking.service.controller.BookingController;
+import com.booking.service.service.BookingService;
+
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.web.reactive.server.WebTestClient;
+
+import reactor.core.publisher.Mono;
+
+@WebFluxTest(controllers = BookingController.class)
+public class GlobalErrorHandlerTest {
+
+    @Autowired
+    private WebTestClient webTestClient;
+
+    @MockBean
+    private BookingService bookingService;
+
+    @Test
+    void testNotFound() {
+        Mockito.when(bookingService.getTicket("ABC"))
+                .thenReturn(Mono.error(new NotFoundException("PNR not found")));
+
+        webTestClient.get().uri("/bookings/get/ABC")
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
+    void testBusinessError() {
+        Mockito.when(bookingService.cancelBooking("ABC"))
+                .thenReturn(Mono.error(new BusinessException("Some error")));
+
+        webTestClient.delete().uri("/bookings/cancel/ABC")
+                .exchange()
+                .expectStatus().isBadRequest();
+    }
+
+    @Test
+    void testUnexpectedError() {
+        Mockito.when(bookingService.getTicket("ERR"))
+                .thenReturn(Mono.error(new RuntimeException("Boom")));
+
+        webTestClient.get().uri("/bookings/get/ERR")
+                .exchange()
+                .expectStatus().is5xxServerError();
+    }
+}

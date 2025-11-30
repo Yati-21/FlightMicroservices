@@ -22,4 +22,3 @@ public class FlightDto {
     private float price;
     private FLIGHT_STATUS status;
 }
-

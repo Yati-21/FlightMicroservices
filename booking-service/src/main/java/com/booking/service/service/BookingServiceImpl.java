@@ -22,6 +22,7 @@ import com.booking.service.repository.BookingRepository;
 import com.booking.service.request.BookingRequest;
 import com.booking.service.request.PassengerRequest;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -31,227 +32,252 @@ import reactor.core.scheduler.Schedulers;
 @Service
 public class BookingServiceImpl implements BookingService {
 
-	private static final int CANCELLATION_LIMIT_HOURS = 24;
+    private static final int CANCELLATION_LIMIT_HOURS = 24;
 
-	private final BookingRepository bookingRepo;
-	private final UserClient userClient;
-	private final FlightClient flightClient;
-	private final PassengerClient passengerClient;
+    private final BookingRepository bookingRepo;
+    private final UserClient userClient;
+    private final FlightClient flightClient;
+    private final PassengerClient passengerClient;
 
-	public BookingServiceImpl(BookingRepository bookingRepo, UserClient userClient, FlightClient flightClient,
-			PassengerClient passengerClient) {
-		this.bookingRepo = bookingRepo;
-		this.userClient = userClient;
-		this.flightClient = flightClient;
-		this.passengerClient = passengerClient;
-	}
+    public BookingServiceImpl(BookingRepository bookingRepo,
+                              UserClient userClient,
+                              FlightClient flightClient,
+                              PassengerClient passengerClient) {
+        this.bookingRepo = bookingRepo;
+        this.userClient = userClient;
+        this.flightClient = flightClient;
+        this.passengerClient = passengerClient;
+    }
 
-	@Override
-	public Mono<String> bookTicket(BookingRequest request) {
+    // ----------------- BOOK TICKET -----------------
 
-		// check passenger count
-		if (request.getPassengers().size() != request.getSeatsBooked()) {
-			return Mono.error(new BusinessException("Passengers count must be equal to seats booked"));
-		}
-		// check duplicate seats in request itself
-		validatePassengerDuplicateRequest(request.getPassengers());
+    @Override
+    @CircuitBreaker(name = "bookingCreateCB", fallbackMethod = "bookTicketFallback")
+    public Mono<String> bookTicket(BookingRequest request) {
 
-		// validate user via user-service
-//        UserDto user;
-//        try {
-//            user = userClient.getUserById(request.getUserId());
-//        } catch (Exception ex) {
-//            throw new NotFoundException("User not found");
-//        }
-//
-//        if (user.getId() == null) {
-//            throw new NotFoundException("User not found");
-//        }
-		// Wrap Feign calls in reactive style + circuit breaker
-		Mono<UserDto> userMono = Mono.fromCallable(() -> userClient.getUserById(request.getUserId()))
-				.subscribeOn(Schedulers.boundedElastic())
-				.onErrorResume(e -> Mono.error(new NotFoundException("User not found"))).flatMap(user -> {
-					if (user.getId() == null)
-						return Mono.error(new NotFoundException("User not found"));
-					return Mono.just(user);
-				});
+        // 1. basic validations from monolith
+        if (request.getPassengers().size() != request.getSeatsBooked()) {
+            return Mono.error(new BusinessException(
+                    "Passengers count must be equal to seats booked"));
+        }
+        try {
+            validatePassengerDuplicateRequest(request.getPassengers());
+        } catch (BusinessException ex) {
+            return Mono.error(ex);
+        }
 
-//		// get flight via flight-service
-//		FlightDto flight;
-//		try {
-//			flight = flightClient.getFlight(request.getFlightId());
-//		} catch (Exception ex) {
-//			throw new NotFoundException("Flight not found");
-//		}
-//
-//		if (flight.getId() == null) {
-//			throw new NotFoundException("Flight not found");
-//		}
-		Mono<FlightDto> flightMono = Mono.fromCallable(() -> flightClient.getFlight(request.getFlightId()))
-				.subscribeOn(Schedulers.boundedElastic())
-				.onErrorResume(e -> Mono.error(new NotFoundException("Flight not found"))).flatMap(flight -> {
-					if (flight.getId() == null)
-						return Mono.error(new NotFoundException("Flight not found"));
-					return Mono.just(flight);
-				});
+        // 2. get user from user-service
+        Mono<UserDto> userMono = Mono.fromCallable(() -> userClient.getUserById(request.getUserId()))
+                .subscribeOn(Schedulers.boundedElastic())
+                .onErrorMap(ex -> new NotFoundException("User not found"))
+                .flatMap(user -> {
+                    if (user == null || user.getId() == null) {
+                        return Mono.error(new NotFoundException("User not found"));
+                    }
+                    return Mono.just(user);
+                });
 
+        // 3. get flight from flight-service
+        Mono<FlightDto> flightMono = Mono.fromCallable(() -> flightClient.getFlight(request.getFlightId()))
+                .subscribeOn(Schedulers.boundedElastic())
+                .onErrorMap(ex -> new NotFoundException("Flight not found"))
+                .flatMap(flight -> {
+                    if (flight == null || flight.getId() == null) {
+                        return Mono.error(new NotFoundException("Flight not found"));
+                    }
+                    return Mono.just(flight);
+                });
 
+        // 4. combine & apply seat rules like monolith
+        return Mono.zip(userMono, flightMono)
+                .flatMap(tuple -> {
+                    UserDto user = tuple.getT1();
+                    FlightDto flight = tuple.getT2();
 
-		// --- FINAL REACTIVE PIPELINE ---
-		return userMono.zipWith(flightMono).flatMap(tuple -> {
+                    return bookingRepo.findByFlightId(request.getFlightId())
+                            .collectList()
+                            .flatMap(existingBookings -> {
 
-			UserDto user = tuple.getT1();
-			FlightDto flight = tuple.getT2();
+                                int alreadyBooked = existingBookings.stream()
+                                        .mapToInt(Booking::getSeatsBooked)
+                                        .sum();
 
-			return bookingRepo.findByFlightId(request.getFlightId()).collectList().flatMap(existingBookings -> {
+                                int available = flight.getTotalSeats() - alreadyBooked;
+                                if (available < request.getSeatsBooked()) {
+                                    return Mono.error(new SeatUnavailableException(
+                                            "Not enough seats available"));
+                                }
 
-				int alreadyBooked = existingBookings.stream().mapToInt(Booking::getSeatsBooked).sum();
+                                return checkSeatConflictsReactive(existingBookings, request.getPassengers())
+                                        .then(saveNewBookingReactive(flight, user, request));
+                            });
+                });
+    }
 
-				int available = flight.getTotalSeats() - alreadyBooked;
+    // Fallback for CircuitBreaker (create booking)
+    public Mono<String> bookTicketFallback(BookingRequest request, Throwable ex) {
+        log.warn("Circuit breaker activated for bookTicket. Reason: {}", ex.toString());
+        return Mono.error(new BusinessException(
+                "Booking temporarily unavailable. Please try again later."));
+    }
 
-				if (available < request.getSeatsBooked()) {
-					return Mono.error(new SeatUnavailableException("Not enough seats available"));
-				}
+    // ----------------- GET TICKET -----------------
 
-				return checkSeatConflictsReactive(existingBookings, request.getPassengers())
-						.then(saveNewBookingReactive(flight, user, request));
-			});
-		});
-	}
-	
-	private void validatePassengerDuplicateRequest(List<PassengerRequest> passengers) {
-		Set<String> seats = new HashSet<>();
-		for (PassengerRequest passengerReq : passengers) {
-			if (!seats.add(passengerReq.getSeatNumber())) {
-				throw new BusinessException("Duplicate seat in request: " + passengerReq.getSeatNumber());
-			}
-		}
-	}
+    @Override
+    public Mono<Booking> getTicket(String pnr) {
+        return bookingRepo.findByPnr(pnr)
+                .switchIfEmpty(Mono.error(new NotFoundException("PNR not found")));
+    }
 
-	private String generateRandomPNR() {
-		return "PNR" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-	}
+    // ----------------- HISTORY BY USER ID -----------------
 
-	@Override
-	public Mono<Booking> getTicket(String pnr) {
-		return bookingRepo.findByPnr(pnr).switchIfEmpty(Mono.error(new NotFoundException("PNR not found")));
-	}
+    @Override
+    public Flux<Booking> getBookingHistoryByUserId(String userId) {
+        return bookingRepo.findByUserId(userId);
+    }
 
-	@Override
-	public Flux<Booking> getBookingHistoryByUserId(String userId) {
-		return bookingRepo.findByUserId(userId);
-	}
+    // ----------------- HISTORY BY EMAIL -----------------
 
-	@Override
-	public Flux<Booking> getBookingHistoryByEmail(String email) {
+    @Override
+    @CircuitBreaker(name = "bookingHistoryEmailCB",
+                    fallbackMethod = "getBookingHistoryByEmailFallback")
+    public Flux<Booking> getBookingHistoryByEmail(String email) {
 
-		UserDto user;
-		try {
-			user = userClient.getUserByEmail(email);
-		} catch (Exception ex) {
-			throw new NotFoundException("User not found with email: " + email);
-		}
+        return Mono.fromCallable(() -> userClient.getUserByEmail(email))
+                .subscribeOn(Schedulers.boundedElastic())
+                .onErrorMap(ex -> new NotFoundException("User not found with email: " + email))
+                .flatMapMany(user -> {
+                    if (user == null || user.getId() == null) {
+                        return Flux.error(
+                                new NotFoundException("User not found with email: " + email));
+                    }
+                    return bookingRepo.findByUserId(user.getId());
+                });
+    }
 
-		if (user.getId() == null) {
-			throw new NotFoundException("User not found with email: " + email);
-		}
+    public Flux<Booking> getBookingHistoryByEmailFallback(String email, Throwable ex) {
+        log.warn("Circuit breaker activated for history-by-email ({}). Reason: {}", email, ex.toString());
+        return Flux.error(new BusinessException(
+                "Booking history temporarily unavailable. Please try again later."));
+    }
 
-		return bookingRepo.findByUserId(user.getId());
-	}
+    // ----------------- CANCEL BOOKING -----------------
 
-//	@Override
-//	public Mono<Void> cancelBooking(String pnr) {
-//
-//		return bookingRepo.findByPnr(pnr).switchIfEmpty(Mono.error(new NotFoundException("Invalid PNR")))
-//				.flatMap(booking -> {
-//
-//					// need flight departure time for 24h rule
-//					FlightDto flight = flightClient.getFlight(booking.getFlightId());
-//
-//					long hoursDiff = Duration.between(LocalDateTime.now(), flight.getDepartureTime()).toHours();
-//					if (hoursDiff < CANCELLATION_LIMIT_HOURS) {
-//						return Mono.error(new BusinessException("Cannot cancel within 24 hours of departure"));
-//					}
-//
-//					// delete passengers & booking
-//					passengerClient.deleteByBooking(booking.getId());
-//
-//					return bookingRepo.delete(booking);
-//				});
-//	}
-	@Override
-	public Mono<Void> cancelBooking(String pnr) {
+    @Override
+    @CircuitBreaker(name = "bookingCancelCB", fallbackMethod = "cancelBookingFallback")
+    public Mono<Void> cancelBooking(String pnr) {
 
-		return bookingRepo.findByPnr(pnr).switchIfEmpty(Mono.error(new NotFoundException("Invalid PNR")))
-				.flatMap(booking -> Mono.fromCallable(() -> flightClient.getFlight(booking.getFlightId()))
-						.subscribeOn(Schedulers.boundedElastic())
-						.onErrorResume(e -> Mono.error(new NotFoundException("Flight not found"))).flatMap(flight -> {
+        return bookingRepo.findByPnr(pnr)
+                .switchIfEmpty(Mono.error(new NotFoundException("Invalid PNR")))
+                .flatMap(booking -> Mono.fromCallable(() ->
+                                flightClient.getFlight(booking.getFlightId()))
+                        .subscribeOn(Schedulers.boundedElastic())
+                        .onErrorMap(ex -> new NotFoundException("Flight not found"))
+                        .flatMap(flight -> {
 
-							long hoursDiff = Duration.between(LocalDateTime.now(), flight.getDepartureTime()).toHours();
+                            long hoursDiff = Duration
+                                    .between(LocalDateTime.now(), flight.getDepartureTime())
+                                    .toHours();
 
-							if (hoursDiff < CANCELLATION_LIMIT_HOURS) {
-								return Mono.error(new BusinessException("Cannot cancel within 24 hours of departure"));
-							}
+                            if (hoursDiff < CANCELLATION_LIMIT_HOURS) {
+                                return Mono.error(new BusinessException(
+                                        "Cannot cancel within 24 hours of departure"));
+                            }
 
-							return Mono.fromRunnable(() -> passengerClient.deleteByBooking(booking.getId()))
-									.subscribeOn(Schedulers.boundedElastic()).then(bookingRepo.delete(booking));
-						}));
-	}
+                            // delete passengers in passenger-service + booking in booking DB
+                            return Mono.fromRunnable(() ->
+                                            passengerClient.deleteByBooking(booking.getId()))
+                                    .subscribeOn(Schedulers.boundedElastic())
+                                    .then(bookingRepo.delete(booking));
+                        }));
+    }
 
-	private Mono<Void> checkSeatConflictsReactive(List<Booking> existingBookings,
-			List<PassengerRequest> newPassengers) {
+    public Mono<Void> cancelBookingFallback(String pnr, Throwable ex) {
+        log.warn("Circuit breaker activated for cancelBooking ({}). Reason: {}", pnr, ex.toString());
+        return Mono.error(new BusinessException(
+                "Cancellation temporarily unavailable. Please try again later."));
+    }
 
-		List<String> bookingIds = existingBookings.stream().map(Booking::getId).collect(Collectors.toList());
+    // ----------------- INTERNAL HELPERS -----------------
 
-		return Flux.fromIterable(bookingIds)
-				.flatMap(bId -> Mono.fromCallable(() -> passengerClient.getPassengersByBooking(bId))
-						.subscribeOn(Schedulers.boundedElastic()))
-				.flatMapIterable(list -> list).map(PassengerDto::getSeatNumber).collect(Collectors.toSet())
-				.flatMap(existingSeats -> {
-					for (PassengerRequest req : newPassengers) {
-						if (existingSeats.contains(req.getSeatNumber())) {
-							return Mono
-									.error(new SeatUnavailableException("Seat already booked: " + req.getSeatNumber()));
-						}
-					}
-					return Mono.empty();
-				});
-	}
+    private void validatePassengerDuplicateRequest(List<PassengerRequest> passengers) {
+        Set<String> seats = new HashSet<>();
+        for (PassengerRequest passengerReq : passengers) {
+            if (!seats.add(passengerReq.getSeatNumber())) {
+                throw new BusinessException("Duplicate seat in request: " + passengerReq.getSeatNumber());
+            }
+        }
+    }
 
-	private Mono<String> saveNewBookingReactive(FlightDto flight, UserDto user, BookingRequest req) {
+    private Mono<Void> checkSeatConflictsReactive(List<Booking> existingBookings,
+                                                  List<PassengerRequest> newPassengers) {
 
-		String pnr = generateRandomPNR();
+        List<String> bookingIds = existingBookings.stream()
+                .map(Booking::getId)
+                .collect(Collectors.toList());
 
-		Booking booking = new Booking();
-		booking.setPnr(pnr);
-		booking.setFlightId(flight.getId());
-		booking.setUserId(user.getId());
-		booking.setSeatsBooked(req.getSeatsBooked());
-		booking.setMealType(req.getMealType());
-		booking.setFlightType(req.getFlightType());
-		booking.setPassengerIds(new ArrayList<>());
+        return Flux.fromIterable(bookingIds)
+                .flatMap(bId -> Mono.fromCallable(() ->
+                                passengerClient.getPassengersByBooking(bId))
+                        .subscribeOn(Schedulers.boundedElastic()))
+                .flatMapIterable(list -> list)
+                .map(PassengerDto::getSeatNumber)
+                .collect(Collectors.toSet())
+                .flatMap(existingSeats -> {
+                    for (PassengerRequest req : newPassengers) {
+                        if (existingSeats.contains(req.getSeatNumber())) {
+                            return Mono.error(new SeatUnavailableException(
+                                    "Seat already booked: " + req.getSeatNumber()));
+                        }
+                    }
+                    return Mono.empty();
+                });
+    }
 
-		return bookingRepo.save(booking)
-				.flatMap(savedBooking -> savePassengersReactive(savedBooking.getId(), req.getPassengers())
-						.flatMap(passengerIds -> {
-							savedBooking.setPassengerIds(passengerIds);
-							return bookingRepo.save(savedBooking).thenReturn(savedBooking.getPnr());
-						}));
-	}
+    private String generateRandomPNR() {
+        return "PNR" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+    }
 
-	private Mono<List<String>> savePassengersReactive(String bookingId, List<PassengerRequest> passengers) {
+    private Mono<String> saveNewBookingReactive(FlightDto flight,
+                                                UserDto user,
+                                                BookingRequest req) {
 
-		return Flux.fromIterable(passengers).flatMap(req -> {
+        String pnr = generateRandomPNR();
 
-			PassengerCreateRequest p = new PassengerCreateRequest();
-			p.setName(req.getName());
-			p.setGender(req.getGender());
-			p.setAge(req.getAge());
-			p.setSeatNumber(req.getSeatNumber());
-			p.setBookingId(bookingId);
+        Booking booking = new Booking();
+        booking.setPnr(pnr);
+        booking.setFlightId(flight.getId());
+        booking.setUserId(user.getId());
+        booking.setSeatsBooked(req.getSeatsBooked());
+        booking.setMealType(req.getMealType());
+        booking.setFlightType(req.getFlightType());
+        booking.setPassengerIds(new ArrayList<>());
 
-			return Mono.fromCallable(() -> passengerClient.createPassenger(p)).subscribeOn(Schedulers.boundedElastic());
-		}).collectList();
-	}
+        return bookingRepo.save(booking)
+                .flatMap(savedBooking ->
+                        savePassengersReactive(savedBooking.getId(), req.getPassengers())
+                                .flatMap(passengerIds -> {
+                                    savedBooking.setPassengerIds(passengerIds);
+                                    return bookingRepo.save(savedBooking)
+                                            .thenReturn(savedBooking.getPnr());
+                                }));
+    }
 
+    private Mono<List<String>> savePassengersReactive(String bookingId,
+                                                      List<PassengerRequest> passengers) {
+
+        return Flux.fromIterable(passengers)
+                .flatMap(req -> {
+                    PassengerCreateRequest p = new PassengerCreateRequest();
+                    p.setName(req.getName());
+                    p.setGender(req.getGender());
+                    p.setAge(req.getAge());
+                    p.setSeatNumber(req.getSeatNumber());
+                    p.setBookingId(bookingId);
+
+                    return Mono.fromCallable(() -> passengerClient.createPassenger(p))
+                            .subscribeOn(Schedulers.boundedElastic());
+                })
+                .collectList();
+    }
 }

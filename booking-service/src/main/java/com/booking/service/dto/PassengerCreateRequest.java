@@ -8,20 +8,20 @@ import lombok.Data;
 @Data
 public class PassengerCreateRequest {
 
-	@NotBlank(message = "name is required")
-	private String name;
+    @NotBlank(message = "name is required")
+    private String name;
 
-	@NotNull(message = "gender is required")
-	private GENDER gender;
+    @NotNull(message = "gender is required")
+    private GENDER gender;
 
-	@Min(1)
-	@Max(120)
-	private int age;
+    @Min(1)
+    @Max(120)
+    private int age;
 
-	@Pattern(regexp = "^[A-Z]\\d+$", message = "invalid seat format")
-	@NotBlank(message = "seatNumber is required")
-	private String seatNumber;
+    @Pattern(regexp = "^[A-Z]\\d+$", message = "invalid seat format")
+    @NotBlank(message = "seatNumber is required")
+    private String seatNumber;
 
-	@NotBlank(message = "bookingId is required")
-	private String bookingId;
+    @NotBlank(message = "bookingId is required")
+    private String bookingId;
 }

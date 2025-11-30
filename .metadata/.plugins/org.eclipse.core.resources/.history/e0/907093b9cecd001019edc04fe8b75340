@@ -1,0 +1,11 @@
+package com.flight.service.client;
+
+import org.springframework.stereotype.Component;
+
+@Component
+public class AirlineClientFallback implements AirlineClient {
+    @Override
+    public AirlineDto getAirline(String code) {
+        return new AirlineDto(code, "Unavailable – airline service down");
+    }
+}

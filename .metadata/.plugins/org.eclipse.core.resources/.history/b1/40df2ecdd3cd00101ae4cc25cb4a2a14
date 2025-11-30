@@ -1,0 +1,65 @@
+package com.booking.service.controller;
+
+import com.booking.service.entity.Booking;
+import com.booking.service.request.BookingRequest;
+import com.booking.service.service.BookingService;
+
+import org.junit.jupiter.api.*;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.web.reactive.server.WebTestClient;
+
+import reactor.core.publisher.*;
+
+@WebFluxTest(controllers = BookingController.class)
+public class BookingControllerTest {
+
+    @Autowired
+    private WebTestClient webTestClient;
+
+    @MockBean
+    private BookingService bookingService;
+
+    @Test
+    void testCreateBooking() {
+        BookingRequest req = new BookingRequest();
+
+        Mockito.when(bookingService.bookTicket(Mockito.any()))
+                .thenReturn(Mono.just("PNR123"));
+
+        webTestClient.post()
+                .uri("/bookings/create")
+                .bodyValue(req)
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(String.class)
+                .isEqualTo("PNR123");
+    }
+
+    @Test
+    void testGetBooking() {
+        Booking booking = new Booking();
+        booking.setPnr("PNR1");
+
+        Mockito.when(bookingService.getTicket("PNR1"))
+                .thenReturn(Mono.just(booking));
+
+        webTestClient.get()
+                .uri("/bookings/get/PNR1")
+                .exchange()
+                .expectStatus().isOk();
+    }
+
+    @Test
+    void testCancelBooking() {
+        Mockito.when(bookingService.cancelBooking("PNR1"))
+                .thenReturn(Mono.empty());
+
+        webTestClient.delete()
+                .uri("/bookings/cancel/PNR1")
+                .exchange()
+                .expectStatus().isOk();
+    }
+}
