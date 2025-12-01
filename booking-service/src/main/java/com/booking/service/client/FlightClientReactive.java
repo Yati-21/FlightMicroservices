@@ -23,7 +23,8 @@ public class FlightClientReactive {
     private static final String FLIGHT_CB = "flightServiceCB";
 
     public Mono<FlightDto> getFlightById(String flightId) {
-        ReactiveCircuitBreaker cb = circuitBreakerFactory.create(FLIGHT_CB);
+    	
+    	ReactiveCircuitBreaker cb = circuitBreakerFactory.create(FLIGHT_CB);
 
         Mono<FlightDto> call = webClientBuilder.build()
                 .get()

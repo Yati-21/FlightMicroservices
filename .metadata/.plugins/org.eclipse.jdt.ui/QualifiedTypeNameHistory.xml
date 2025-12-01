@@ -24,7 +24,6 @@
     <fullyQualifiedTypeName name="com.flight.service.request.FlightSearchRequest"/>
     <fullyQualifiedTypeName name="lombok.Getter"/>
     <fullyQualifiedTypeName name="lombok.Setter"/>
-    <fullyQualifiedTypeName name="com.booking.service.entity.Passenger"/>
     <fullyQualifiedTypeName name="org.springframework.boot.webflux.test.autoconfigure.WebFluxTest"/>
     <fullyQualifiedTypeName name="org.springframework.test.context.bean.override.mockito.MockitoBean"/>
     <fullyQualifiedTypeName name="com.booking.service.entity.GENDER"/>
@@ -32,6 +31,10 @@
     <fullyQualifiedTypeName name="com.booking.service.entity.MEAL_TYPE"/>
     <fullyQualifiedTypeName name="com.booking.service.entity.FLIGHT_TYPE"/>
     <fullyQualifiedTypeName name="com.booking.service.request.PassengerRequest"/>
-    <fullyQualifiedTypeName name="org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreakerFactory"/>
+    <fullyQualifiedTypeName name="com.booking.service.entity.Passenger"/>
     <fullyQualifiedTypeName name="java.lang.Object"/>
+    <fullyQualifiedTypeName name="org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreakerFactory"/>
+    <fullyQualifiedTypeName name="org.springframework.http.HttpStatusCode"/>
+    <fullyQualifiedTypeName name="org.springframework.beans.factory.annotation.Autowired"/>
+    <fullyQualifiedTypeName name="com.booking.service.kafka.KafkaProducer"/>
 </qualifiedTypeNameHistroy>

@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?><testrun name="BookingTest" project="booking-service" tests="3" started="3" failures="0" errors="0" ignored="0">
-  <testsuite name="com.booking.service.entity.BookingTest" time="0.004" displayname="BookingTest" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.entity.BookingTest]">
-    <testcase name="testBookingNoArgsConstructor" classname="com.booking.service.entity.BookingTest" time="0.0" displayname="testBookingNoArgsConstructor()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.entity.BookingTest]/[method:testBookingNoArgsConstructor()]"/>
-    <testcase name="testBookingGettersSetters" classname="com.booking.service.entity.BookingTest" time="0.002" displayname="testBookingGettersSetters()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.entity.BookingTest]/[method:testBookingGettersSetters()]"/>
-    <testcase name="testBookingAllArgsConstructor" classname="com.booking.service.entity.BookingTest" time="0.001" displayname="testBookingAllArgsConstructor()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.entity.BookingTest]/[method:testBookingAllArgsConstructor()]"/>
-  </testsuite>
-</testrun>

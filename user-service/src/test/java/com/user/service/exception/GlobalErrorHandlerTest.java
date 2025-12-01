@@ -15,9 +15,6 @@ class GlobalErrorHandlerTest {
 
     GlobalErrorHandler handler = new GlobalErrorHandler();
 
-    // ----------------------------------------------------
-    // 1. VALIDATION HANDLER TEST
-    // ----------------------------------------------------
     @Test
     void testHandleValidation() {
 
@@ -48,9 +45,6 @@ class GlobalErrorHandlerTest {
                 .verifyComplete();
     }
 
-    // ----------------------------------------------------
-    // 2. NOT FOUND HANDLER TEST
-    // ----------------------------------------------------
     @Test
     void testHandleNotFound() {
 
@@ -65,9 +59,6 @@ class GlobalErrorHandlerTest {
                 .verifyComplete();
     }
 
-    // ----------------------------------------------------
-    // 3. GENERAL EXCEPTION HANDLER TEST
-    // ----------------------------------------------------
     @Test
     void testHandleGeneral() {
 

@@ -1,0 +1,5 @@
+package com.booking.service.kafka;
+
+public class KafkaTopics {
+    public static final String BOOKING_CREATED = "booking-created-topic";
+}

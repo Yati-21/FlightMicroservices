@@ -38,7 +38,8 @@ public class FlightController {
 
     @GetMapping("/get/{flightId}")
     public Mono<Flight> getFlight(@PathVariable String flightId) {
-        return service.getFlightById(flightId);
+    	System.out.println("......Booking-Service CALLING Flight-Service for flightId=" + flightId);
+    	return service.getFlightById(flightId);
     }
 
     @GetMapping("/airline/{code}")

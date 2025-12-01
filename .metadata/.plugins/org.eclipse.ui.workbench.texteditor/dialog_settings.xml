@@ -4,6 +4,12 @@
 	<section name="java.lang.Class">
 		<item key="replaceBarOpen" value="true"/>
 		<list key="findhistory">
+			<item value="mail"/>
+			<item value="kafka"/>
+			<item value="reactor-test"/>
+			<item value="saveNewBookingReactive"/>
+			<item value="reactor"/>
+			<item value="mockit"/>
 			<item value="actuato"/>
 			<item value="getBookingHistoryByEmail"/>
 			<item value="cance"/>
@@ -13,12 +19,6 @@
 			<item value="open"/>
 			<item value=".onErrorMap(ex -&gt; new NotFoundException(&quot;User not found&quot;))"/>
 			<item value="flight.getTotalSeats();"/>
-			<item value="jacoco"/>
-			<item value="jac"/>
-			<item value="plugin"/>
-			<item value="lombok"/>
-			<item value="lom"/>
-			<item value="jacoc"/>
 		</list>
 		<list key="replacehistory">
 			<item value="="/>

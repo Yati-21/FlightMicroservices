@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?><testrun name="GlobalErrorHandlerTest (3)" project="user-service" tests="3" started="3" failures="0" errors="0" ignored="0">
-  <testsuite name="com.user.service.exception.GlobalErrorHandlerTest" time="0.238" displayname="GlobalErrorHandlerTest" uniqueid="[engine:junit-jupiter]/[class:com.user.service.exception.GlobalErrorHandlerTest]">
-    <testcase name="testHandleGeneral" classname="com.user.service.exception.GlobalErrorHandlerTest" time="0.213" displayname="testHandleGeneral()" uniqueid="[engine:junit-jupiter]/[class:com.user.service.exception.GlobalErrorHandlerTest]/[method:testHandleGeneral()]"/>
-    <testcase name="testHandleValidation" classname="com.user.service.exception.GlobalErrorHandlerTest" time="0.021" displayname="testHandleValidation()" uniqueid="[engine:junit-jupiter]/[class:com.user.service.exception.GlobalErrorHandlerTest]/[method:testHandleValidation()]"/>
-    <testcase name="testHandleNotFound" classname="com.user.service.exception.GlobalErrorHandlerTest" time="0.003" displayname="testHandleNotFound()" uniqueid="[engine:junit-jupiter]/[class:com.user.service.exception.GlobalErrorHandlerTest]/[method:testHandleNotFound()]"/>
-  </testsuite>
-</testrun>

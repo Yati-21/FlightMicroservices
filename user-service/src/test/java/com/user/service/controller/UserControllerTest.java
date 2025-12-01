@@ -27,10 +27,6 @@ class UserControllerTest {
     @MockitoBean
     private UserService service;
 
-    // =====================================================================
-    //                        CREATE USER
-    // =====================================================================
-
     @Test
     void testCreateUser() {
         UserCreateRequest req = new UserCreateRequest();
@@ -52,10 +48,6 @@ class UserControllerTest {
                 .jsonPath("$.name").isEqualTo("Jay");
     }
 
-    // =====================================================================
-    //                        GET USER
-    // =====================================================================
-
     @Test
     void testGetUser() {
         User user = new User("1", "Jay", "jay@mail.com");
@@ -68,10 +60,6 @@ class UserControllerTest {
                 .expectBody()
                 .jsonPath("$.name").isEqualTo("Jay");
     }
-
-    // =====================================================================
-    //                        GET BY EMAIL
-    // =====================================================================
 
     @Test
     void testGetByEmail() {
@@ -86,10 +74,6 @@ class UserControllerTest {
                 .expectBody()
                 .jsonPath("$.id").isEqualTo("1");
     }
-
-    // =====================================================================
-    //                        UPDATE USER
-    // =====================================================================
 
     @Test
     void testUpdateUser() {
@@ -111,10 +95,6 @@ class UserControllerTest {
                 .jsonPath("$.name").isEqualTo("New");
     }
 
-    // =====================================================================
-    //                        DELETE USER
-    // =====================================================================
-
     @Test
     void testDeleteUser() {
         Mockito.when(service.deleteUser("1"))
@@ -124,10 +104,6 @@ class UserControllerTest {
                 .exchange()
                 .expectStatus().isOk();
     }
-
-    // =====================================================================
-    //                        GET ALL USERS
-    // =====================================================================
 
     @Test
     void testGetAllUsers() {
