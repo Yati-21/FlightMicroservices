@@ -47,7 +47,6 @@ public class BookingServiceImplTest {
 		);
 	}
 
-	// Helper: valid booking request
 	private BookingRequest makeValidReq() {
 		BookingRequest req = new BookingRequest();
 		req.setUserId("U1");
@@ -66,9 +65,6 @@ public class BookingServiceImplTest {
 		return req;
 	}
 
-	// ---------------------------------------------------------
-	// 1. SUCCESSFUL BOOKING
-	// ---------------------------------------------------------
 	@Test
 	void testBookTicket_Success() {
 
@@ -98,7 +94,6 @@ public class BookingServiceImplTest {
 		StepVerifier.create(service.bookTicket(req)).expectNextMatches(pnr -> pnr.startsWith("PNR")).verifyComplete();
 	}
 
-	// 2. PASSENGERS != SEATS
 	@Test
 	void testBookTicket_PassengerCountMismatch() {
 		BookingRequest req = makeValidReq();
@@ -107,7 +102,6 @@ public class BookingServiceImplTest {
 		StepVerifier.create(service.bookTicket(req)).expectError(BusinessException.class).verify();
 	}
 
-	// 3. DUPLICATE SEATS IN REQUEST
 	@Test
 	void testBookTicket_DuplicateSeat() {
 
@@ -135,7 +129,6 @@ public class BookingServiceImplTest {
 		StepVerifier.create(service.bookTicket(req)).expectError(BusinessException.class).verify();
 	}
 
-	// 4. USER NOT FOUND (error from userClient)
 	@Test
 	void testBookTicket_UserNotFound() {
 		BookingRequest req = makeValidReq();
@@ -146,7 +139,6 @@ public class BookingServiceImplTest {
 		StepVerifier.create(service.bookTicket(req)).expectError(NotFoundException.class).verify();
 	}
 
-	// 5. FLIGHT NOT FOUND (error from flightClient)
 	@Test
 	void testBookTicket_FlightNotFound() {
 		BookingRequest req = makeValidReq();
@@ -157,7 +149,6 @@ public class BookingServiceImplTest {
 		StepVerifier.create(service.bookTicket(req)).expectError(NotFoundException.class).verify();
 	}
 
-	// 6. EXISTING BOOKINGS → NOT ENOUGH SEATS
 	@Test
 	void testBookTicket_NotEnoughSeats() {
 
@@ -180,38 +171,6 @@ public class BookingServiceImplTest {
 		StepVerifier.create(service.bookTicket(req)).expectError(SeatUnavailableException.class).verify();
 	}
 
-//    // 7. SEAT CONFLICT FROM OTHER BOOKINGS
-//    @Test
-//    void testBookTicket_SeatConflict() {
-//
-//        BookingRequest req = makeValidReq(); // seat A1
-//
-//        UserDto user = new UserDto();
-//        user.setId("U1");
-//
-//        FlightDto flight = new FlightDto();
-//        flight.setId("F1");
-//        flight.setTotalSeats(10);
-//
-//        Booking existing = new Booking();
-//        existing.setId("B1");
-//
-//        Passenger p = new Passenger();
-//        p.setSeatNumber("A1"); // same seat already booked
-//
-//        when(userClient.getUserById("U1")).thenReturn(Mono.just(user));
-//        when(flightClient.getFlightById("F1")).thenReturn(Mono.just(flight));
-//        when(bookingRepo.findByFlightId("F1"))
-//                .thenReturn(Flux.just(existing));
-//        when(passengerRepo.findByBookingId("B1"))
-//                .thenReturn(Flux.just(p));
-//
-//        StepVerifier.create(service.bookTicket(req))
-//                .expectError(SeatUnavailableException.class)
-//                .verify();
-//    }
-
-	// 8. getTicket SUCCESS
 	@Test
 	void testGetTicket_Success() {
 		Booking b = new Booking();
@@ -222,7 +181,6 @@ public class BookingServiceImplTest {
 		StepVerifier.create(service.getTicket("PNR123")).expectNext(b).verifyComplete();
 	}
 
-	// 9. getTicket NOT FOUND
 	@Test
 	void testGetTicket_NotFound() {
 
@@ -231,7 +189,6 @@ public class BookingServiceImplTest {
 		StepVerifier.create(service.getTicket("PNR123")).expectError(NotFoundException.class).verify();
 	}
 
-	// 10. HISTORY BY USER ID (simple happy path)
 	@Test
 	void testHistoryByUserId_Success() {
 		Booking b = new Booking();
@@ -242,7 +199,6 @@ public class BookingServiceImplTest {
 		StepVerifier.create(service.getBookingHistoryByUserId("U1")).expectNext(b).verifyComplete();
 	}
 
-	// 11. HISTORY BY EMAIL → USER ID NULL (hits error branch)
 	@Test
 	void testHistoryByEmail_UserIdNull() {
 
@@ -253,7 +209,6 @@ public class BookingServiceImplTest {
 				.verify();
 	}
 
-	// 12. HISTORY BY EMAIL SUCCESS
 	@Test
 	void testHistoryByEmail_Success() {
 
@@ -269,7 +224,6 @@ public class BookingServiceImplTest {
 		StepVerifier.create(service.getBookingHistoryByEmail("e@mail.com")).expectNext(b).verifyComplete();
 	}
 
-	// 13. CANCEL BOOKING SUCCESS
 	@Test
 	void testCancelBooking_Success() {
 
@@ -288,7 +242,6 @@ public class BookingServiceImplTest {
 		StepVerifier.create(service.cancelBooking("PNR")).verifyComplete();
 	}
 
-	// 14. CANCEL BOOKING → TOO LATE (<24 HOURS)
 	@Test
 	void testCancelBooking_TooLate() {
 
@@ -305,7 +258,6 @@ public class BookingServiceImplTest {
 		StepVerifier.create(service.cancelBooking("PNR")).expectError(BusinessException.class).verify();
 	}
 
-	// 15. CANCEL BOOKING → INVALID PNR
 	@Test
 	void testCancelBooking_InvalidPNR() {
 
@@ -319,7 +271,6 @@ public class BookingServiceImplTest {
 
 		BookingRequest req = makeValidReq(); // seat A1
 
-		// Mock user and flight
 		UserDto user = new UserDto();
 		user.setId("U1");
 
@@ -329,8 +280,6 @@ public class BookingServiceImplTest {
 
 		when(userClient.getUserById("U1")).thenReturn(Mono.just(user));
 		when(flightClient.getFlightById("F1")).thenReturn(Mono.just(flight));
-
-		// Existing booking with DIFFERENT seat
 		Booking existing = new Booking();
 		existing.setId("B1");
 		existing.setSeatsBooked(1); // booked 1, still many seats left
@@ -342,7 +291,6 @@ public class BookingServiceImplTest {
 
 		when(passengerRepo.findByBookingId("B1")).thenReturn(Flux.just(p));
 
-		// Save booking
 		Booking saved = new Booking();
 		saved.setId("BID");
 		saved.setPnr("PNR123");

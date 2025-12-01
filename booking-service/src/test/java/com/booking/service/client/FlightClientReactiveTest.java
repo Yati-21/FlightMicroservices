@@ -26,7 +26,6 @@ class FlightClientReactiveTest {
 
     private WebClient webClient;
 
-    /** FIXED: removed generics (<<?>>) */
     private WebClient.RequestHeadersUriSpec uriSpec;
     private WebClient.RequestHeadersSpec headersSpec;
     private WebClient.ResponseSpec responseSpec;
@@ -48,9 +47,6 @@ class FlightClientReactiveTest {
         flightClient = new FlightClientReactive(webClientBuilder, cbFactory);
     }
 
-    // ------------------------------------------
-    // SUCCESS
-    // ------------------------------------------
     @Test
     void testGetFlightById_Success() {
 
@@ -74,9 +70,6 @@ class FlightClientReactiveTest {
                 .verifyComplete();
     }
 
-    // ------------------------------------------
-    // NOT FOUND
-    // ------------------------------------------
     @Test
     void testGetFlightById_NotFound() {
 
@@ -84,7 +77,6 @@ class FlightClientReactiveTest {
         when(uriSpec.uri(anyString(), anyString())).thenReturn(headersSpec);
         when(headersSpec.retrieve()).thenReturn(responseSpec);
 
-        // FIXED: do NOT use eq(predicate)
         when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
 
         when(responseSpec.bodyToMono(FlightDto.class))
@@ -100,26 +92,6 @@ class FlightClientReactiveTest {
                 .verify();
     }
 
-    // ------------------------------------------
-    // CIRCUIT BREAKER FALLBACK
-    // ------------------------------------------
-//    @Test
-//    void testGetFlightById_Fallback() {
-//
-//        when(cb.run(
-//                ArgumentMatchers.<Mono<FlightDto>>any(),
-//                ArgumentMatchers.<Function<Throwable, Mono<FlightDto>>>any()
-//        )).thenAnswer(invocation -> {
-//            Function<Throwable, Mono<FlightDto>> fallback =
-//                    invocation.getArgument(1);
-//
-//            return fallback.apply(new RuntimeException("forced CB error"));
-//        });
-//
-//        StepVerifier.create(flightClient.getFlightById("F1"))
-//                .expectError(BusinessException.class)
-//                .verify();
-//    }
 
 
 }

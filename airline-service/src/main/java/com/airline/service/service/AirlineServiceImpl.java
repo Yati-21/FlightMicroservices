@@ -13,6 +13,7 @@ import reactor.core.publisher.Mono;
 @Service
 public class AirlineServiceImpl implements AirlineService {
 
+	private static final String ERR_AIRLINE_NOT_FOUND = "Airline not found";
 	private final AirlineRepository repo;
 
 	public AirlineServiceImpl(AirlineRepository repo) {
@@ -27,7 +28,7 @@ public class AirlineServiceImpl implements AirlineService {
 
 	@Override
 	public Mono<Airline> getAirline(String code) {
-		return repo.findById(code).switchIfEmpty(Mono.error(new NotFoundException("Airline not found")));
+		return repo.findById(code).switchIfEmpty(Mono.error(new NotFoundException(ERR_AIRLINE_NOT_FOUND)));
 	}
 
 	@Override
@@ -37,7 +38,7 @@ public class AirlineServiceImpl implements AirlineService {
 
 	@Override
 	public Mono<Airline> updateAirline(String code, AirlineUpdateRequest req) {
-		return repo.findById(code).switchIfEmpty(Mono.error(new NotFoundException("Airline not found")))
+		return repo.findById(code).switchIfEmpty(Mono.error(new NotFoundException(ERR_AIRLINE_NOT_FOUND)))
 				.flatMap(existing -> {
 					existing.setName(req.getName());
 					return repo.save(existing);
@@ -46,7 +47,7 @@ public class AirlineServiceImpl implements AirlineService {
 
 	@Override
 	public Mono<Void> deleteAirline(String code) {
-		return repo.findById(code).switchIfEmpty(Mono.error(new NotFoundException("Airline not found")))
+		return repo.findById(code).switchIfEmpty(Mono.error(new NotFoundException(ERR_AIRLINE_NOT_FOUND)))
 				.flatMap(repo::delete);
 	}
 }

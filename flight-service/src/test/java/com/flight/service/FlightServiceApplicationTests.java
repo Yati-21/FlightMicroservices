@@ -8,6 +8,7 @@ class FlightServiceApplicationTests {
 
 	@Test
 	void contextLoads() {
+		// This test ensures that the Spring Boot application context loads successfully
 	}
 
 }

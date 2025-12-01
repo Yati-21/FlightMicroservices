@@ -5,12 +5,15 @@ import com.flight.service.request.FlightSearchRequest;
 import com.flight.service.service.FlightService;
 
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+@Slf4j
 @RestController
 @RequestMapping("/flights")
 public class FlightController {
@@ -38,7 +41,7 @@ public class FlightController {
 
     @GetMapping("/get/{flightId}")
     public Mono<Flight> getFlight(@PathVariable String flightId) {
-    	System.out.println("......Booking-Service CALLING Flight-Service for flightId=" + flightId);
+    	log.info("......Booking-Service CALLING Flight-Service for flightId=" + flightId);
     	return service.getFlightById(flightId);
     }
 
