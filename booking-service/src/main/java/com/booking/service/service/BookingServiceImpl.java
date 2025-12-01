@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import com.booking.service.client.FlightClientReactive;
@@ -13,6 +14,7 @@ import com.booking.service.dto.FlightDto;
 import com.booking.service.dto.UserDto;
 import com.booking.service.entity.Booking;
 import com.booking.service.entity.Passenger;
+import com.booking.service.event.BookingCreatedEvent;
 import com.booking.service.exception.BusinessException;
 import com.booking.service.exception.NotFoundException;
 import com.booking.service.exception.SeatUnavailableException;
@@ -35,13 +37,16 @@ public class BookingServiceImpl implements BookingService {
 	private final UserClientReactive userClient;
 	private final FlightClientReactive flightClient;
 	private final PassengerRepository passengerRepo;
+	private final KafkaTemplate<String, Object> kafkaTemplate;
 
 	public BookingServiceImpl(BookingRepository bookingRepo, UserClientReactive userClient,
-			FlightClientReactive flightClient, PassengerRepository passengerRepo) {
+			FlightClientReactive flightClient, PassengerRepository passengerRepo,
+			KafkaTemplate<String, Object> kafkaTemplate) {
 		this.bookingRepo = bookingRepo;
 		this.userClient = userClient;
 		this.flightClient = flightClient;
 		this.passengerRepo = passengerRepo;
+		this.kafkaTemplate = kafkaTemplate;
 	}
 
 	@Override
@@ -169,8 +174,21 @@ public class BookingServiceImpl implements BookingService {
 				.flatMap(savedBooking -> savePassengersReactive(savedBooking.getId(), req.getPassengers())
 						.flatMap(passengerIds -> {
 							savedBooking.setPassengerIds(passengerIds);
-							return bookingRepo.save(savedBooking).thenReturn(savedBooking.getPnr());
+
+							return bookingRepo.save(savedBooking).doOnSuccess(b -> sendBookingCreatedEvent(b, user))
+									.thenReturn(savedBooking.getPnr());
 						}));
+
+	}
+
+	private void sendBookingCreatedEvent(Booking booking, UserDto user) {
+
+		BookingCreatedEvent event = new BookingCreatedEvent(booking.getPnr(), user.getEmail(), user.getName(),
+				booking.getFlightId(), booking.getSeatsBooked(), "Booking successful!");
+
+		kafkaTemplate.send("booking-created", event);
+
+		log.info("Sent Kafka event for booking PNR: {}", booking.getPnr());
 	}
 
 	private Mono<List<String>> savePassengersReactive(String bookingId, List<PassengerRequest> passengers) {

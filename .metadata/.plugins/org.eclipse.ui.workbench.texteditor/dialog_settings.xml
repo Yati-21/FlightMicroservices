@@ -4,10 +4,14 @@
 	<section name="java.lang.Class">
 		<item key="replaceBarOpen" value="true"/>
 		<list key="findhistory">
+			<item value="ka"/>
+			<item value="kafka&apos;"/>
+			<item value="saveNewBookingReactive"/>
+			<item value="@CircuitBreaker"/>
+			<item value="CircuitBreaker"/>
 			<item value="mail"/>
 			<item value="kafka"/>
 			<item value="reactor-test"/>
-			<item value="saveNewBookingReactive"/>
 			<item value="reactor"/>
 			<item value="mockit"/>
 			<item value="actuato"/>
@@ -15,10 +19,6 @@
 			<item value="cance"/>
 			<item value="circuit"/>
 			<item value="loadbal"/>
-			<item value="webflu"/>
-			<item value="open"/>
-			<item value=".onErrorMap(ex -&gt; new NotFoundException(&quot;User not found&quot;))"/>
-			<item value="flight.getTotalSeats();"/>
 		</list>
 		<list key="replacehistory">
 			<item value="="/>
