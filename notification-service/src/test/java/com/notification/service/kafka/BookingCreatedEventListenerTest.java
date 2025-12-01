@@ -10,10 +10,8 @@ class BookingCreatedEventListenerTest {
 
 	@Test
 	void testHandleBookingCreated() throws Exception {
-
 		EmailService emailService = mock(EmailService.class);
 		BookingCreatedEventListener listener = new BookingCreatedEventListener(emailService);
-
 		String jsonMessage = """
 				{
 				  "pnr":"PNR555",
@@ -24,9 +22,7 @@ class BookingCreatedEventListenerTest {
 				  "message":"Booking successful!"
 				}
 				""";
-
 		listener.handleBookingCreated(jsonMessage);
-
 		verify(emailService, times(1)).sendBookingEmail(any(BookingCreatedEvent.class));
 	}
 }

@@ -23,9 +23,7 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public Mono<User> createUser(UserCreateRequest req) {
-
 		User user = new User(null, req.getName(), req.getEmail());
-
 		return repo.save(user);
 	}
 
@@ -42,7 +40,6 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public Mono<User> updateUser(String id, UserUpdateRequest req) {
-
 		return repo.findById(id).switchIfEmpty(Mono.error(new NotFoundException(USER_NOT_FOUND))).flatMap(existing -> {
 			existing.setName(req.getName());
 			existing.setEmail(req.getEmail());

@@ -13,20 +13,14 @@ class EmailServiceTest {
 
 	@Test
 	void testSendBookingEmail() {
-
 		JavaMailSender mailSender = mock(JavaMailSender.class);
-
 		EmailService emailService = new EmailService(mailSender);
-
-		BookingCreatedEvent event = new BookingCreatedEvent("PNR123", "test@gmail.com", "John", "FL101", 2,
+		BookingCreatedEvent event = new BookingCreatedEvent("PNR123", "test@gmail.com", "abc", "FL101", 2,
 				"Booking successful!");
-
 		ArgumentCaptor<SimpleMailMessage> captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
 
 		emailService.sendBookingEmail(event);
-
 		verify(mailSender, times(1)).send(captor.capture());
-
 		SimpleMailMessage sentMessage = captor.getValue();
 
 		assertEquals("test@gmail.com", sentMessage.getTo()[0]);

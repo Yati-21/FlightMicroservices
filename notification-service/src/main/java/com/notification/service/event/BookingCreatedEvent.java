@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class BookingCreatedEvent 
 {
+	//for notification service
     private String pnr;
     private String userEmail;
     private String userName;

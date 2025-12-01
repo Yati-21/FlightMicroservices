@@ -9,6 +9,6 @@ import com.flight.service.dto.AirlineDto;
 @FeignClient(name = "airline-service", fallback = AirlineClientFallback.class)
 public interface AirlineClient {
 
-    @GetMapping("/airlines/{code}")
-    AirlineDto getAirline(@PathVariable("code") String code);
+	@GetMapping("/airlines/{code}")
+	AirlineDto getAirline(@PathVariable("code") String code);
 }

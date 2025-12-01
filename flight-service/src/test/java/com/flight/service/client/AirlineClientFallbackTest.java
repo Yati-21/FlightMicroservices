@@ -7,18 +7,16 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class AirlineClientFallbackTest {
 
-    private final AirlineClientFallback fallback = new AirlineClientFallback();
+	private final AirlineClientFallback fallback = new AirlineClientFallback();
 
-    @Test
-    void testGetAirline_ThrowsFallbackException() {
-        RuntimeException ex = assertThrows(RuntimeException.class,
-                () -> fallback.getAirline("AI"));
+	@Test
+	void testGetAirline_ThrowsFallbackException() {
+		RuntimeException ex = assertThrows(RuntimeException.class, () -> fallback.getAirline("AI"));
+		assertEquals("Airline service is down", ex.getMessage());
+	}
 
-        assertEquals("Airline service is down", ex.getMessage());
-    }
-
-    @Test
-    void testFallbackIsComponent() {
-        assertNotNull(fallback);
-    }
+	@Test
+	void testFallbackIsComponent() {
+		assertNotNull(fallback);
+	}
 }

@@ -10,12 +10,12 @@ import lombok.Data;
 @Data
 public class FlightSearchRequest {
 
-    @NotNull(message = "fromCity is required")
-    private AIRPORT_CODE fromCity;
+	@NotNull(message = "fromCity is required")
+	private AIRPORT_CODE fromCity;
 
-    @NotNull(message = "toCity is required")
-    private AIRPORT_CODE toCity;
+	@NotNull(message = "toCity is required")
+	private AIRPORT_CODE toCity;
 
-    @NotNull(message = "date is required")
-    private LocalDate date;
+	@NotNull(message = "date is required")
+	private LocalDate date;
 }

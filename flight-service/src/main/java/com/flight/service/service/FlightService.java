@@ -10,11 +10,11 @@ import reactor.core.publisher.Mono;
 
 public interface FlightService {
 
-    Mono<Flight> addFlight(Flight flight);
+	Mono<Flight> addFlight(Flight flight);
 
-    Flux<Flight> searchFlights(AIRPORT_CODE from, AIRPORT_CODE to, LocalDate date);
+	Flux<Flight> searchFlights(AIRPORT_CODE from, AIRPORT_CODE to, LocalDate date);
 
-    Mono<Flight> getFlightById(String flightId);
+	Mono<Flight> getFlightById(String flightId);
 
-    Flux<Flight> getFlightsByAirline(String airlineCode);
+	Flux<Flight> getFlightsByAirline(String airlineCode);
 }

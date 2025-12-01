@@ -11,7 +11,7 @@ import reactor.core.publisher.Flux;
 @Repository
 public interface FlightRepository extends ReactiveMongoRepository<Flight, String> {
 
-    Flux<Flight> findByFromCityAndToCity(AIRPORT_CODE from, AIRPORT_CODE to);
+	Flux<Flight> findByFromCityAndToCity(AIRPORT_CODE from, AIRPORT_CODE to);
 
-    Flux<Flight> findByAirlineCode(String airlineCode);
+	Flux<Flight> findByAirlineCode(String airlineCode);
 }

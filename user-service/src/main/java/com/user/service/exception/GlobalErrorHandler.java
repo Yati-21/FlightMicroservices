@@ -16,12 +16,9 @@ public class GlobalErrorHandler {
 
 	@ExceptionHandler(WebExchangeBindException.class)
 	public Mono<ResponseEntity<Map<String, Object>>> handleValidation(WebExchangeBindException ex) {
-
 		List<FieldError> errors = ex.getFieldErrors();
-
 		Map<String, String> fieldMap = errors.stream()
 				.collect(Collectors.toMap(FieldError::getField, FieldError::getDefaultMessage, (a, b) -> a + "; " + b));
-
 		return Mono.just(ResponseEntity.badRequest().body(Map.of("errors", fieldMap, "message", "Validation failed")));
 	}
 

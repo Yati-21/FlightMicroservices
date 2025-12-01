@@ -21,13 +21,9 @@ public class BookingCreatedEventListener {
 	public void handleBookingCreated(String message) {
 		try {
 			log.info("Raw message received: {}", message);
-
 			BookingCreatedEvent event = objectMapper.readValue(message, BookingCreatedEvent.class);
-
 			log.info("Converted BookingCreatedEvent: {}", event);
-
 			emailService.sendBookingEmail(event);
-
 		} catch (Exception e) {
 			log.error("Error converting message to BookingCreatedEvent: {}", e.getMessage(), e);
 		}
