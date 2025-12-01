@@ -7,26 +7,23 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
-import com.booking.service.client.FlightClient;
-import com.booking.service.client.PassengerClient;
-import com.booking.service.client.UserClient;
+import com.booking.service.client.FlightClientReactive;
+import com.booking.service.client.UserClientReactive;
 import com.booking.service.dto.FlightDto;
-import com.booking.service.dto.PassengerCreateRequest;
-import com.booking.service.dto.PassengerDto;
 import com.booking.service.dto.UserDto;
 import com.booking.service.entity.Booking;
+import com.booking.service.entity.Passenger;
 import com.booking.service.exception.BusinessException;
 import com.booking.service.exception.NotFoundException;
 import com.booking.service.exception.SeatUnavailableException;
 import com.booking.service.repository.BookingRepository;
+import com.booking.service.repository.PassengerRepository;
 import com.booking.service.request.BookingRequest;
 import com.booking.service.request.PassengerRequest;
 
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 @Slf4j
 @Service
@@ -35,27 +32,26 @@ public class BookingServiceImpl implements BookingService {
     private static final int CANCELLATION_LIMIT_HOURS = 24;
 
     private final BookingRepository bookingRepo;
-    private final UserClient userClient;
-    private final FlightClient flightClient;
-    private final PassengerClient passengerClient;
+    private final UserClientReactive userClient;
+    private final FlightClientReactive flightClient;
+    private final PassengerRepository passengerRepo;
 
     public BookingServiceImpl(BookingRepository bookingRepo,
-                              UserClient userClient,
-                              FlightClient flightClient,
-                              PassengerClient passengerClient) {
+                              UserClientReactive userClient,
+                              FlightClientReactive flightClient,
+                              PassengerRepository passengerRepo) {
         this.bookingRepo = bookingRepo;
         this.userClient = userClient;
         this.flightClient = flightClient;
-        this.passengerClient = passengerClient;
+        this.passengerRepo = passengerRepo;
     }
 
     // ----------------- BOOK TICKET -----------------
 
     @Override
-    @CircuitBreaker(name = "bookingCreateCB", fallbackMethod = "bookTicketFallback")
     public Mono<String> bookTicket(BookingRequest request) {
 
-        // 1. basic validations from monolith
+        // 1. basic validations
         if (request.getPassengers().size() != request.getSeatsBooked()) {
             return Mono.error(new BusinessException(
                     "Passengers count must be equal to seats booked"));
@@ -66,29 +62,13 @@ public class BookingServiceImpl implements BookingService {
             return Mono.error(ex);
         }
 
-        // 2. get user from user-service
-        Mono<UserDto> userMono = Mono.fromCallable(() -> userClient.getUserById(request.getUserId()))
-                .subscribeOn(Schedulers.boundedElastic())
-                .onErrorMap(ex -> new NotFoundException("User not found"))
-                .flatMap(user -> {
-                    if (user == null || user.getId() == null) {
-                        return Mono.error(new NotFoundException("User not found"));
-                    }
-                    return Mono.just(user);
-                });
+        // 2. get user from user-service (reactive, with CB inside client)
+        Mono<UserDto> userMono = userClient.getUserById(request.getUserId());
 
-        // 3. get flight from flight-service
-        Mono<FlightDto> flightMono = Mono.fromCallable(() -> flightClient.getFlight(request.getFlightId()))
-                .subscribeOn(Schedulers.boundedElastic())
-                .onErrorMap(ex -> new NotFoundException("Flight not found"))
-                .flatMap(flight -> {
-                    if (flight == null || flight.getId() == null) {
-                        return Mono.error(new NotFoundException("Flight not found"));
-                    }
-                    return Mono.just(flight);
-                });
+        // 3. get flight from flight-service (reactive, with CB)
+        Mono<FlightDto> flightMono = flightClient.getFlightById(request.getFlightId());
 
-        // 4. combine & apply seat rules like monolith
+        // 4. combine & apply seat rules
         return Mono.zip(userMono, flightMono)
                 .flatMap(tuple -> {
                     UserDto user = tuple.getT1();
@@ -114,13 +94,6 @@ public class BookingServiceImpl implements BookingService {
                 });
     }
 
-    // Fallback for CircuitBreaker (create booking)
-    public Mono<String> bookTicketFallback(BookingRequest request, Throwable ex) {
-        log.warn("Circuit breaker activated for bookTicket. Reason: {}", ex.toString());
-        return Mono.error(new BusinessException(
-                "Booking temporarily unavailable. Please try again later."));
-    }
-
     // ----------------- GET TICKET -----------------
 
     @Override
@@ -139,14 +112,12 @@ public class BookingServiceImpl implements BookingService {
     // ----------------- HISTORY BY EMAIL -----------------
 
     @Override
-    @CircuitBreaker(name = "bookingHistoryEmailCB",
-                    fallbackMethod = "getBookingHistoryByEmailFallback")
     public Flux<Booking> getBookingHistoryByEmail(String email) {
 
-        return Mono.fromCallable(() -> userClient.getUserByEmail(email))
-                .subscribeOn(Schedulers.boundedElastic())
-                .onErrorMap(ex -> new NotFoundException("User not found with email: " + email))
-                .flatMapMany(user -> {
+        // 1. get user by email through user service
+        return userClient.getUserByEmail(email) 
+                .flux()
+                .flatMap(user -> {
                     if (user == null || user.getId() == null) {
                         return Flux.error(
                                 new NotFoundException("User not found with email: " + email));
@@ -155,47 +126,33 @@ public class BookingServiceImpl implements BookingService {
                 });
     }
 
-    public Flux<Booking> getBookingHistoryByEmailFallback(String email, Throwable ex) {
-        log.warn("Circuit breaker activated for history-by-email ({}). Reason: {}", email, ex.toString());
-        return Flux.error(new BusinessException(
-                "Booking history temporarily unavailable. Please try again later."));
-    }
-
     // ----------------- CANCEL BOOKING -----------------
 
     @Override
-    @CircuitBreaker(name = "bookingCancelCB", fallbackMethod = "cancelBookingFallback")
     public Mono<Void> cancelBooking(String pnr) {
 
         return bookingRepo.findByPnr(pnr)
                 .switchIfEmpty(Mono.error(new NotFoundException("Invalid PNR")))
-                .flatMap(booking -> Mono.fromCallable(() ->
-                                flightClient.getFlight(booking.getFlightId()))
-                        .subscribeOn(Schedulers.boundedElastic())
-                        .onErrorMap(ex -> new NotFoundException("Flight not found"))
-                        .flatMap(flight -> {
+                .flatMap(booking ->
+                        // get flight details via reactive client
+                        flightClient.getFlightById(booking.getFlightId())
+                                .flatMap(flight -> {
 
-                            long hoursDiff = Duration
-                                    .between(LocalDateTime.now(), flight.getDepartureTime())
-                                    .toHours();
+                                    long hoursDiff = Duration
+                                            .between(LocalDateTime.now(), flight.getDepartureTime())
+                                            .toHours();
 
-                            if (hoursDiff < CANCELLATION_LIMIT_HOURS) {
-                                return Mono.error(new BusinessException(
-                                        "Cannot cancel within 24 hours of departure"));
-                            }
+                                    if (hoursDiff < CANCELLATION_LIMIT_HOURS) {
+                                        return Mono.error(new BusinessException(
+                                                "Cannot cancel within 24 hours of departure"));
+                                    }
 
-                            // delete passengers in passenger-service + booking in booking DB
-                            return Mono.fromRunnable(() ->
-                                            passengerClient.deleteByBooking(booking.getId()))
-                                    .subscribeOn(Schedulers.boundedElastic())
-                                    .then(bookingRepo.delete(booking));
-                        }));
-    }
-
-    public Mono<Void> cancelBookingFallback(String pnr, Throwable ex) {
-        log.warn("Circuit breaker activated for cancelBooking ({}). Reason: {}", pnr, ex.toString());
-        return Mono.error(new BusinessException(
-                "Cancellation temporarily unavailable. Please try again later."));
+                                    // delete passengers + booking
+                                    return passengerRepo.findByBookingId(booking.getId())
+                                            .flatMap(p -> passengerRepo.deleteById(p.getId()))
+                                            .then(bookingRepo.delete(booking));
+                                })
+                );
     }
 
     // ----------------- INTERNAL HELPERS -----------------
@@ -212,16 +169,13 @@ public class BookingServiceImpl implements BookingService {
     private Mono<Void> checkSeatConflictsReactive(List<Booking> existingBookings,
                                                   List<PassengerRequest> newPassengers) {
 
-        List<String> bookingIds = existingBookings.stream()
-                .map(Booking::getId)
-                .collect(Collectors.toList());
+        if (existingBookings.isEmpty()) {
+            return Mono.empty();
+        }
 
-        return Flux.fromIterable(bookingIds)
-                .flatMap(bId -> Mono.fromCallable(() ->
-                                passengerClient.getPassengersByBooking(bId))
-                        .subscribeOn(Schedulers.boundedElastic()))
-                .flatMapIterable(list -> list)
-                .map(PassengerDto::getSeatNumber)
+        return Flux.fromIterable(existingBookings)
+                .flatMap(b -> passengerRepo.findByBookingId(b.getId()))
+                .map(Passenger::getSeatNumber)
                 .collect(Collectors.toSet())
                 .flatMap(existingSeats -> {
                     for (PassengerRequest req : newPassengers) {
@@ -268,16 +222,15 @@ public class BookingServiceImpl implements BookingService {
 
         return Flux.fromIterable(passengers)
                 .flatMap(req -> {
-                    PassengerCreateRequest p = new PassengerCreateRequest();
+                    Passenger p = new Passenger();
                     p.setName(req.getName());
                     p.setGender(req.getGender());
                     p.setAge(req.getAge());
                     p.setSeatNumber(req.getSeatNumber());
                     p.setBookingId(bookingId);
-
-                    return Mono.fromCallable(() -> passengerClient.createPassenger(p))
-                            .subscribeOn(Schedulers.boundedElastic());
+                    return passengerRepo.save(p);
                 })
+                .map(Passenger::getId)
                 .collectList();
     }
 }

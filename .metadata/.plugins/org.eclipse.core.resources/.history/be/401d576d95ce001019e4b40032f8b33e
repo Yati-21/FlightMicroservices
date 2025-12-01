@@ -1,0 +1,43 @@
+package com.booking.service.client;
+
+import com.booking.service.dto.FlightDto;
+import com.booking.service.exception.BusinessException;
+import com.booking.service.exception.NotFoundException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreaker;
+import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreakerFactory;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class FlightClientReactive {
+
+    private final WebClient.Builder webClientBuilder;
+    private final ReactiveCircuitBreakerFactory<?, ?> circuitBreakerFactory;
+
+    private static final String FLIGHT_SERVICE_CB = "flightServiceCB";
+
+    public Mono<FlightDto> getFlightById(String flightId) {
+        ReactiveCircuitBreaker cb = circuitBreakerFactory.create(FLIGHT_SERVICE_CB);
+
+        Mono<FlightDto> requestMono = webClientBuilder.build()
+                .get()
+                .uri("http://flight-service/flights/{id}", flightId) // adjust path if needed
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, resp -> {
+                    log.warn("Flight {} not found, status={}", flightId, resp.statusCode());
+                    return Mono.error(new NotFoundException("Flight not found"));
+                })
+                .bodyToMono(FlightDto.class);
+
+        return cb.run(requestMono, throwable -> {
+            log.warn("Flight service call failed: {}", throwable.getMessage());
+            return Mono.error(new BusinessException("Flight service unavailable"));
+        });
+    }
+}

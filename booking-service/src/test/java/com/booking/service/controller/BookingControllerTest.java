@@ -8,88 +8,83 @@ import com.booking.service.request.BookingRequest;
 import com.booking.service.request.PassengerRequest;
 import com.booking.service.service.BookingService;
 
-import ch.qos.logback.core.net.server.Client;
-
-import static org.mockito.ArgumentMatchers.any;
-
-import java.util.List;
-
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
-import reactor.core.publisher.*;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-@WebFluxTest(controllers = BookingController.class)
+import java.util.List;
+
+@WebFluxTest(BookingController.class)
 class BookingControllerTest {
 
-    @Autowired
-    private WebTestClient webTestClient;
+	@Autowired
+	private WebTestClient webClient;
 
-    @MockitoBean
-    private BookingService bookingService;
+	@MockitoBean
+	private BookingService service;
 
-    private BookingRequest validReq;
+	private BookingRequest bookingReq;
 
-    @BeforeEach
-    void setup() {
-        PassengerRequest p = new PassengerRequest();
-        p.setName("John");
-        p.setGender(GENDER.M);
-        p.setAge(30);
-        p.setSeatNumber("A1");
+	@BeforeEach
+	void setup() {
+		PassengerRequest p = new PassengerRequest();
+		p.setName("Aman");
+		p.setGender(GENDER.M);
+		p.setAge(20);
+		p.setSeatNumber("A1");
 
-        validReq = new BookingRequest();
-        validReq.setFlightId("F1");
-        validReq.setUserId("U1");
-        validReq.setSeatsBooked(1);
-        validReq.setMealType(MEAL_TYPE.VEG);
-        validReq.setFlightType(FLIGHT_TYPE.ONE_WAY);
-        validReq.setPassengers(List.of(p));
-    }
+		bookingReq = new BookingRequest();
+		bookingReq.setFlightId("F1");
+		bookingReq.setUserId("U1");
+		bookingReq.setSeatsBooked(1);
+		bookingReq.setMealType(MEAL_TYPE.VEG);
+		bookingReq.setFlightType(FLIGHT_TYPE.ONE_WAY);
+		bookingReq.setPassengers(List.of(p));
+	}
 
-    @Test
-    void testCreateBooking() {
-        Mockito.when(bookingService.bookTicket(Mockito.any()))
-                .thenReturn(Mono.just("PNR123"));
+	@Test
+	void testCreateBooking() {
+		Mockito.when(service.bookTicket(Mockito.any())).thenReturn(Mono.just("PNR1234"));
 
-        webTestClient.post()
-                .uri("/bookings/create")
-                .bodyValue(validReq)
-                .exchange()
-                .expectStatus().isCreated()
-                .expectBody(String.class)
-                .isEqualTo("PNR123");
-    }
+		webClient.post().uri("/bookings/create").contentType(MediaType.APPLICATION_JSON).bodyValue(bookingReq)
+				.exchange().expectStatus().isCreated().expectBody(String.class).isEqualTo("PNR1234");
+	}
 
-    @Test
-    void testGetBooking() {
-        Booking booking = new Booking();
-        booking.setPnr("PNR1");
+	@Test
+	void testGetBooking() {
+		Booking b = new Booking();
+		b.setPnr("PNR123");
 
-        Mockito.when(bookingService.getTicket("PNR1"))
-                .thenReturn(Mono.just(booking));
+		Mockito.when(service.getTicket("PNR123")).thenReturn(Mono.just(b));
 
-        webTestClient.get()
-                .uri("/bookings/get/PNR1")
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody()
-                .jsonPath("$.pnr").isEqualTo("PNR1");
-    }
+		webClient.get().uri("/bookings/get/PNR123").exchange().expectStatus().isOk().expectBody().jsonPath("$.pnr")
+				.isEqualTo("PNR123");
+	}
 
-    @Test
-    void testCancelBooking() {
-        Mockito.when(bookingService.cancelBooking("PNR1"))
-                .thenReturn(Mono.empty());
+	@Test
+	void testCancelBooking() {
+		Mockito.when(service.cancelBooking("PNR1")).thenReturn(Mono.empty());
 
-        webTestClient.delete()
-                .uri("/bookings/cancel/PNR1")
-                .exchange()
-                .expectStatus().isOk();
-    }
+		webClient.delete().uri("/bookings/cancel/PNR1").exchange().expectStatus().isOk();
+	}
+
+	@Test
+	void testGetHistoryByUser() {
+		Booking b = new Booking();
+		b.setId("B1");
+
+		Mockito.when(service.getBookingHistoryByUserId("U1")).thenReturn(Flux.just(b));
+
+		webClient.get().uri("/bookings/history/user/U1").exchange().expectStatus().isOk().expectBody()
+				.jsonPath("$[0].id").isEqualTo("B1");
+	}
 }
-

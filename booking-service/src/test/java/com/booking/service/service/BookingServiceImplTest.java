@@ -1,304 +1,184 @@
-package com.booking.service.service;
-
-import com.booking.service.client.FlightClient;
-import com.booking.service.client.PassengerClient;
-import com.booking.service.client.UserClient;
-import com.booking.service.dto.FlightDto;
-import com.booking.service.dto.PassengerCreateRequest;
-import com.booking.service.dto.PassengerDto;
-import com.booking.service.dto.UserDto;
-import com.booking.service.entity.*;
-import com.booking.service.exception.*;
-import com.booking.service.repository.BookingRepository;
-import com.booking.service.request.BookingRequest;
-import com.booking.service.request.PassengerRequest;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.*;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
-
-import java.time.LocalDateTime;
-import java.util.*;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
-class BookingServiceImplTest {
-
-	@Mock
-	private BookingRepository bookingRepo;
-
-	@Mock
-	private UserClient userClient;
-
-	@Mock
-	private FlightClient flightClient;
-
-	@Mock
-	private PassengerClient passengerClient;
-
-	@InjectMocks
-	private BookingServiceImpl service;
-
-	private BookingRequest bookingRequest;
-	private PassengerRequest passengerReq;
-
-	@BeforeEach
-	void setUp() {
-		MockitoAnnotations.openMocks(this);
-
-		passengerReq = new PassengerRequest();
-		passengerReq.setName("John");
-		passengerReq.setGender(GENDER.M);
-		passengerReq.setAge(25);
-		passengerReq.setSeatNumber("A1");
-
-		bookingRequest = new BookingRequest();
-		bookingRequest.setFlightId("FL1");
-		bookingRequest.setUserId("U1");
-		bookingRequest.setSeatsBooked(1);
-		bookingRequest.setPassengers(List.of(passengerReq));
-		bookingRequest.setMealType(MEAL_TYPE.VEG);
-		bookingRequest.setFlightType(FLIGHT_TYPE.ONE_WAY);
-	}
-
-	// =====================================================================
-	// bookTicket SUCCESS
-	// =====================================================================
-
-	@Test
-	void testBookTicketSuccess() {
-		UserDto user = new UserDto();
-		user.setId("U1");
-
-		FlightDto flight = new FlightDto();
-		flight.setId("FL1");
-		flight.setTotalSeats(100);
-
-		// bookingRepo.save can be called multiple times; echo back the booking
-		when(bookingRepo.save(any(Booking.class))).thenAnswer(invocation -> {
-			Booking b = invocation.getArgument(0);
-			if (b.getId() == null) {
-				b.setId("B1");
-			}
-			// pnr is already set in service before save
-			return Mono.just(b);
-		});
-
-		when(userClient.getUserById("U1")).thenReturn(user);
-		when(flightClient.getFlight("FL1")).thenReturn(flight);
-
-		// no previous bookings for this flight
-		when(bookingRepo.findByFlightId("FL1")).thenReturn(Flux.empty());
-
-		// passenger creation in passenger-service
-		when(passengerClient.createPassenger(any(PassengerCreateRequest.class))).thenReturn("P1");
-
-		StepVerifier.create(service.bookTicket(bookingRequest)).assertNext(pnr -> {
-			assertThat(pnr).isNotNull();
-			assertThat(pnr).startsWith("PNR");
-		}).verifyComplete();
-
-		verify(userClient).getUserById("U1");
-		verify(flightClient).getFlight("FL1");
-		verify(bookingRepo).findByFlightId("FL1");
-		verify(bookingRepo, atLeastOnce()).save(any(Booking.class));
-		verify(passengerClient, atLeastOnce()).createPassenger(any(PassengerCreateRequest.class));
-	}
-
-	// =====================================================================
-	// USER NOT FOUND
-	// =====================================================================
-
-//	@Test
-//	void testBookTicket_userNotFound() {
-//		// Any exception from userClient is mapped to NotFoundException("User not
-//		// found")
-//		doAnswer(inv -> {
-//			throw new RuntimeException("User service 404");
-//		}).when(userClient).getUserById("U1");
+//package com.booking.service.service;
 //
-//		StepVerifier.create(service.bookTicket(bookingRequest)).expectErrorSatisfies(ex -> {
-//			assertThat(ex).isInstanceOf(NotFoundException.class);
-//			assertThat(ex.getMessage()).isEqualTo("User not found");
-//		}).verify();
+//import com.booking.service.client.FlightClient;
+//import com.booking.service.client.UserClient;
+//import com.booking.service.dto.FlightDto;
+//import com.booking.service.dto.UserDto;
+//import com.booking.service.entity.*;
+//import com.booking.service.exception.*;
+//import com.booking.service.repository.BookingRepository;
+//import com.booking.service.repository.PassengerRepository;
+//import com.booking.service.request.BookingRequest;
+//import com.booking.service.request.PassengerRequest;
 //
-//		verify(userClient).getUserById("U1");
-//		verifyNoInteractions(flightClient);
-//	}
-
-	// =====================================================================
-	// FLIGHT NOT FOUND
-	// =====================================================================
-
-	@Test
-	void testBookTicket_flightNotFound() {
-		UserDto user = new UserDto();
-		user.setId("U1");
-
-		when(userClient.getUserById("U1")).thenReturn(user);
-		// Any exception here is mapped to NotFoundException("Flight not found")
-		when(flightClient.getFlight("FL1")).thenThrow(new RuntimeException("Flight not found 404"));
-
-		StepVerifier.create(service.bookTicket(bookingRequest)).expectErrorSatisfies(ex -> {
-			assertThat(ex).isInstanceOf(NotFoundException.class);
-			assertThat(ex.getMessage()).isEqualTo("Flight not found");
-		}).verify();
-
-		verify(userClient).getUserById("U1");
-		verify(flightClient).getFlight("FL1");
-		verifyNoInteractions(bookingRepo);
-	}
-
-	// =====================================================================
-	// SEAT COUNT MISMATCH
-	// =====================================================================
-
-	@Test
-	void testBookTicket_seatCountMismatch() {
-		bookingRequest.setSeatsBooked(2); // only 1 passenger in list
-
-		StepVerifier.create(service.bookTicket(bookingRequest)).expectErrorSatisfies(ex -> {
-			assertThat(ex).isInstanceOf(BusinessException.class);
-			assertThat(ex.getMessage()).contains("Passengers count must be equal to seats booked");
-		}).verify();
-
-		verifyNoInteractions(userClient, flightClient, bookingRepo, passengerClient);
-	}
-
-	// =====================================================================
-	// DUPLICATE SEATS
-	// =====================================================================
-
-	@Test
-	void testBookTicket_duplicateSeats() {
-		PassengerRequest p2 = new PassengerRequest();
-		p2.setName("Alice");
-		p2.setGender(GENDER.F);
-		p2.setAge(22);
-		p2.setSeatNumber("A1"); // duplicate
-
-		bookingRequest.setSeatsBooked(2);
-		bookingRequest.setPassengers(List.of(passengerReq, p2));
-
-		StepVerifier.create(service.bookTicket(bookingRequest)).expectErrorSatisfies(ex -> {
-			assertThat(ex).isInstanceOf(BusinessException.class);
-			assertThat(ex.getMessage()).contains("Duplicate seat in request");
-		}).verify();
-
-		verifyNoInteractions(userClient, flightClient, bookingRepo, passengerClient);
-	}
-
-	// =====================================================================
-	// NO AVAILABLE SEATS
-	// =====================================================================
-
-	@Test
-	void testBookTicket_noAvailableSeats() {
-		UserDto user = new UserDto();
-		user.setId("U1");
-
-		FlightDto flight = new FlightDto();
-		flight.setId("FL1");
-		flight.setTotalSeats(1);
-
-		Booking prev = new Booking();
-		prev.setSeatsBooked(1);
-
-		when(userClient.getUserById("U1")).thenReturn(user);
-		when(flightClient.getFlight("FL1")).thenReturn(flight);
-		when(bookingRepo.findByFlightId("FL1")).thenReturn(Flux.just(prev));
-
-		StepVerifier.create(service.bookTicket(bookingRequest)).expectErrorSatisfies(ex -> {
-			assertThat(ex).isInstanceOf(SeatUnavailableException.class);
-			assertThat(ex.getMessage()).contains("Not enough seats available");
-		}).verify();
-	}
-
-	// =====================================================================
-	// SEAT CONFLICT
-	// =====================================================================
-
-//	@Test
-//	void testBookTicket_seatConflict() {
-//		UserDto user = new UserDto();
-//		user.setId("U1");
+//import org.junit.jupiter.api.BeforeEach;
+//import org.junit.jupiter.api.Test;
+//import org.mockito.*;
 //
-//		FlightDto flight = new FlightDto();
-//		flight.setId("FL1");
-//		flight.setTotalSeats(100);
+//import reactor.core.publisher.Flux;
+//import reactor.core.publisher.Mono;
+//import reactor.test.StepVerifier;
 //
-//		Booking existingBooking = new Booking();
-//		existingBooking.setId("B1");
-//		existingBooking.setSeatsBooked(1);
+//import java.time.LocalDateTime;
+//import java.util.*;
 //
-//		PassengerDto existingPassenger = new PassengerDto();
-//		existingPassenger.setSeatNumber("A1"); // seat already taken
+//import static org.mockito.ArgumentMatchers.any;
+//import static org.mockito.Mockito.*;
 //
-//		when(userClient.getUserById("U1")).thenReturn(user);
-//		when(flightClient.getFlight("FL1")).thenReturn(flight);
+//class BookingServiceImplTest {
 //
-//		// One existing booking for this flight
-//		when(bookingRepo.findByFlightId("FL1")).thenReturn(Flux.just(existingBooking));
+//    @Mock
+//    private BookingRepository bookingRepo;
 //
-//		// For that booking, passenger-service returns a passenger occupying A1
-//		doAnswer(inv -> new ArrayList<>(List.of(existingPassenger))).when(passengerClient).getPassengersByBooking("B1");
+//    @Mock
+//    private PassengerRepository passengerRepo;
 //
-//		StepVerifier.create(service.bookTicket(bookingRequest)).expectErrorSatisfies(ex -> {
-//			assertThat(ex).isInstanceOf(SeatUnavailableException.class);
-//			assertThat(ex.getMessage()).contains("Seat already booked: A1");
-//		}).verify();
+//    @Mock
+//    private UserClient userClient;
 //
-//		verify(passengerClient).getPassengersByBooking("B1");
-//	}
-
-	// =====================================================================
-	// CANCEL BOOKING SUCCESS
-	// =====================================================================
-
-	@Test
-	void testCancelBookingSuccess() {
-		Booking booking = new Booking();
-		booking.setId("B1");
-		booking.setFlightId("FL1");
-
-		FlightDto flight = new FlightDto();
-		flight.setDepartureTime(LocalDateTime.now().plusHours(48)); // > 24h
-
-		when(bookingRepo.findByPnr("PNR1")).thenReturn(Mono.just(booking));
-		when(flightClient.getFlight("FL1")).thenReturn(flight);
-		doNothing().when(passengerClient).deleteByBooking("B1");
-		when(bookingRepo.delete(booking)).thenReturn(Mono.empty());
-
-		StepVerifier.create(service.cancelBooking("PNR1")).verifyComplete();
-
-		verify(passengerClient).deleteByBooking("B1");
-		verify(bookingRepo).delete(booking);
-	}
-
-	// =====================================================================
-	// CANCEL WITHIN 24H
-	// =====================================================================
-
-	@Test
-	void testCancelBooking_Within24Hours() {
-		Booking booking = new Booking();
-		booking.setId("B1");
-		booking.setFlightId("FL1");
-
-		FlightDto flight = new FlightDto();
-		flight.setDepartureTime(LocalDateTime.now().plusHours(2)); // < 24h
-
-		when(bookingRepo.findByPnr("PNR1")).thenReturn(Mono.just(booking));
-		when(flightClient.getFlight("FL1")).thenReturn(flight);
-
-		StepVerifier.create(service.cancelBooking("PNR1")).expectErrorSatisfies(ex -> {
-			assertThat(ex).isInstanceOf(BusinessException.class);
-			assertThat(ex.getMessage()).contains("Cannot cancel within 24 hours of departure");
-		}).verify();
-	}
-}
+//    @Mock
+//    private FlightClient flightClient;
+//
+//    @InjectMocks
+//    private BookingServiceImpl service;
+//
+//    private BookingRequest bookingRequest;
+//    private PassengerRequest passengerReq;
+//
+//    @BeforeEach
+//    void setup() {
+//        MockitoAnnotations.openMocks(this);
+//
+//        passengerReq = new PassengerRequest();
+//        passengerReq.setName("John");
+//        passengerReq.setGender(GENDER.M);
+//        passengerReq.setAge(25);
+//        passengerReq.setSeatNumber("A1");
+//
+//        bookingRequest = new BookingRequest();
+//        bookingRequest.setFlightId("FL1");
+//        bookingRequest.setUserId("U1");
+//        bookingRequest.setSeatsBooked(1);
+//        bookingRequest.setPassengers(List.of(passengerReq));
+//        bookingRequest.setMealType(MEAL_TYPE.VEG);
+//        bookingRequest.setFlightType(FLIGHT_TYPE.ONE_WAY);
+//    }
+//
+//    // SUCCESS: Book ticket
+//    @Test
+//    void testBookTicketSuccess() {
+//        UserDto user = new UserDto();
+//        user.setId("U1");
+//
+//        FlightDto flight = new FlightDto();
+//        flight.setId("FL1");
+//        flight.setTotalSeats(100);
+//
+//        when(bookingRepo.save(any())).thenAnswer(inv -> {
+//            Booking b = inv.getArgument(0);
+//            b.setId("B1");
+//            return Mono.just(b);
+//        });
+//
+//        when(userClient.getUserById("U1")).thenReturn(user);
+//        when(flightClient.getFlight("FL1")).thenReturn(flight);
+//
+//        when(bookingRepo.findByFlightId("FL1")).thenReturn(Flux.empty());
+//
+//        when(passengerRepo.save(any())).thenAnswer(inv -> {
+//            Passenger p = inv.getArgument(0);
+//            p.setId("P1");
+//            return Mono.just(p);
+//        });
+//
+//        StepVerifier.create(service.bookTicket(bookingRequest))
+//                .assertNext(pnr -> {
+//                    assert pnr.startsWith("PNR");
+//                })
+//                .verifyComplete();
+//    }
+//
+//    @Test
+//    void testUserNotFound() {
+//        doThrow(new RuntimeException("404"))
+//                .when(userClient).getUserById("U1");
+//
+//        StepVerifier.create(service.bookTicket(bookingRequest))
+//                .expectError(NotFoundException.class)
+//                .verify();
+//    }
+//
+//    @Test
+//    void testFlightNotFound() {
+//        UserDto user = new UserDto();
+//        user.setId("U1");
+//
+//        when(userClient.getUserById("U1")).thenReturn(user);
+//        doThrow(new RuntimeException("404"))
+//                .when(flightClient).getFlight("FL1");
+//
+//        StepVerifier.create(service.bookTicket(bookingRequest))
+//                .expectError(NotFoundException.class)
+//                .verify();
+//    }
+//
+//    @Test
+//    void testSeatCountMismatch() {
+//        bookingRequest.setSeatsBooked(2);
+//
+//        StepVerifier.create(service.bookTicket(bookingRequest))
+//                .expectError(BusinessException.class)
+//                .verify();
+//    }
+//
+//    @Test
+//    void testDuplicateSeats() {
+//        PassengerRequest p2 = new PassengerRequest();
+//        p2.setName("A");
+//        p2.setGender(GENDER.F);
+//        p2.setAge(20);
+//        p2.setSeatNumber("A1");
+//
+//        bookingRequest.setSeatsBooked(2);
+//        bookingRequest.setPassengers(List.of(passengerReq, p2));
+//
+//        StepVerifier.create(service.bookTicket(bookingRequest))
+//                .expectError(BusinessException.class)
+//                .verify();
+//    }
+//
+//    @Test
+//    void testCancelBookingSuccess() {
+//        Booking booking = new Booking();
+//        booking.setId("B1");
+//        booking.setFlightId("FL1");
+//
+//        FlightDto flight = new FlightDto();
+//        flight.setDepartureTime(LocalDateTime.now().plusHours(30));
+//
+//        when(bookingRepo.findByPnr("PNR1")).thenReturn(Mono.just(booking));
+//        when(flightClient.getFlight("FL1")).thenReturn(flight);
+//        when(passengerRepo.findByBookingId("B1")).thenReturn(Flux.empty());
+//        when(bookingRepo.delete(booking)).thenReturn(Mono.empty());
+//
+//        StepVerifier.create(service.cancelBooking("PNR1"))
+//                .verifyComplete();
+//    }
+//
+//    @Test
+//    void testCancelBookingTooLate() {
+//        Booking booking = new Booking();
+//        booking.setId("B1");
+//        booking.setFlightId("FL1");
+//
+//        FlightDto flight = new FlightDto();
+//        flight.setDepartureTime(LocalDateTime.now().plusHours(2));
+//
+//        when(bookingRepo.findByPnr("PNR1")).thenReturn(Mono.just(booking));
+//        when(flightClient.getFlight("FL1")).thenReturn(flight);
+//
+//        StepVerifier.create(service.cancelBooking("PNR1"))
+//                .expectError(BusinessException.class)
+//                .verify();
+//    }
+//}

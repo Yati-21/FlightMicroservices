@@ -27,7 +27,6 @@ public class FlightController {
         return service.addFlight(flight).map(Flight::getId);
     }
 
-    // ✅ EXACT monolithic style
     @PostMapping("/search")
     public Flux<Flight> search(@RequestBody @Valid FlightSearchRequest req) {
         return service.searchFlights(

@@ -1,53 +1,45 @@
 package com.booking.service.exception;
 
-import org.junit.jupiter.api.Test;
-
 import com.booking.service.controller.BookingController;
 import com.booking.service.service.BookingService;
 
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 import reactor.core.publisher.Mono;
 
-@org.springframework.boot.webflux.test.autoconfigure.WebFluxTest(controllers = BookingController.class)
-public class GlobalErrorHandlerTest {
+@WebFluxTest(controllers = BookingController.class)
+class GlobalErrorHandlerTest {
 
-    @Autowired
-    private WebTestClient webTestClient;
+	@Autowired
+	private WebTestClient client;
 
-    @MockitoBean
-    private BookingService bookingService;
+	@MockitoBean
+	private BookingService service;
 
-    @Test
-    void testNotFound() {
-        Mockito.when(bookingService.getTicket("ABC"))
-                .thenReturn(Mono.error(new NotFoundException("PNR not found")));
+	@Test
+	void testNotFound() {
+		Mockito.when(service.getTicket("X")).thenReturn(Mono.error(new NotFoundException("PNR not found")));
 
-        webTestClient.get().uri("/bookings/get/ABC")
-                .exchange()
-                .expectStatus().isNotFound();
-    }
+		client.get().uri("/bookings/get/X").exchange().expectStatus().isNotFound();
+	}
 
-    @Test
-    void testBusinessError() {
-        Mockito.when(bookingService.cancelBooking("ABC"))
-                .thenReturn(Mono.error(new BusinessException("Some error")));
+	@Test
+	void testBusinessException() {
+		Mockito.when(service.cancelBooking("X")).thenReturn(Mono.error(new BusinessException("Cannot cancel")));
 
-        webTestClient.delete().uri("/bookings/cancel/ABC")
-                .exchange()
-                .expectStatus().isBadRequest();
-    }
+		client.delete().uri("/bookings/cancel/X").exchange().expectStatus().isBadRequest();
+	}
 
-    @Test
-    void testUnexpectedError() {
-        Mockito.when(bookingService.getTicket("ERR"))
-                .thenReturn(Mono.error(new RuntimeException("Boom")));
+	@Test
+	void testUnexpectedException() {
+		Mockito.when(service.getTicket("Z")).thenReturn(Mono.error(new RuntimeException("Boom")));
 
-        webTestClient.get().uri("/bookings/get/ERR")
-                .exchange()
-                .expectStatus().is5xxServerError();
-    }
+		client.get().uri("/bookings/get/Z").exchange().expectStatus().is5xxServerError();
+	}
 }

@@ -1,0 +1,58 @@
+package com.booking.service.client;
+
+import com.booking.service.dto.UserDto;
+import com.booking.service.exception.BusinessException;
+import com.booking.service.exception.NotFoundException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreaker;
+import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreakerFactory;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class UserClientReactive {
+
+    private final WebClient.Builder webClientBuilder;
+    private final ReactiveCircuitBreakerFactory<?, ?> circuitBreakerFactory;
+
+    private static final String USER_SERVICE_CB = "userServiceCB";
+
+    public Mono<UserDto> getUserById(String userId) {
+        ReactiveCircuitBreaker cb = circuitBreakerFactory.create(USER_SERVICE_CB);
+
+        Mono<UserDto> requestMono = webClientBuilder.build()
+                .get()
+                .uri("http://user-service/users/{id}", userId) // adjust path if needed
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, resp -> {
+                    log.warn("User {} not found, status={}", userId, resp.statusCode());
+                    return Mono.error(new NotFoundException("User not found"));
+                })
+                .bodyToMono(UserDto.class);
+
+        return cb.run(requestMono, throwable -> {
+            log.warn("User service call failed: {}", throwable.getMessage());
+            return Mono.error(new BusinessException("User service unavailable"));
+        });
+    }
+    
+    public Mono<UserDto> getUserByEmail(String email) {
+        ReactiveCircuitBreaker cb = circuitBreakerFactory.create("userServiceCB");
+        Mono<UserDto> mono = webClientBuilder.build()
+            .get()
+            .uri("http://user-service/users/email/{email}", email)
+            .retrieve()
+            .onStatus(HttpStatusCode::is4xxClientError,
+                      resp -> Mono.error(new NotFoundException("User not found with email: " + email)))
+            .bodyToMono(UserDto.class);
+        return cb.run(mono, t -> Mono.error(new BusinessException("User service unavailable")));
+    }
+
+    
+    
+}

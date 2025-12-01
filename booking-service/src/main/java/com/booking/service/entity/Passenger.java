@@ -1,0 +1,24 @@
+package com.booking.service.entity;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import lombok.Data;
+
+@Data
+@Document("passengers")
+public class Passenger {
+
+    @Id
+    private String id;
+
+    private String name;
+
+    private GENDER gender;
+
+    private int age;
+
+    private String seatNumber;
+
+    private String bookingId;
+}

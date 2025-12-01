@@ -38,6 +38,5 @@ public class Booking {
     @NotNull(message = "flightType is required")
     private FLIGHT_TYPE flightType;
 
-    // passenger ids coming from passenger-service
     private List<String> passengerIds;
 }
