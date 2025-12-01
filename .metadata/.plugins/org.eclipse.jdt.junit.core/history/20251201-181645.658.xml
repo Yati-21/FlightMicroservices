@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?><testrun name="FlightClientReactiveTest" project="booking-service" tests="3" started="3" failures="0" errors="1" ignored="0">
+  <testsuite name="com.booking.service.client.FlightClientReactiveTest" time="1.992" displayname="FlightClientReactiveTest" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.client.FlightClientReactiveTest]">
+    <testcase name="testGetFlightById_Fallback" classname="com.booking.service.client.FlightClientReactiveTest" time="1.842" displayname="testGetFlightById_Fallback()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.client.FlightClientReactiveTest]/[method:testGetFlightById_Fallback()]">
+      <error>java.lang.Error: Unresolved compilation problem: 
+	The method run(Mono&lt;Object&gt;, Function&lt;Throwable,Mono&lt;Object&gt;&gt;) is ambiguous for the type ReactiveCircuitBreaker
+&#13;
+	at com.booking.service.client.FlightClientReactiveTest.testGetFlightById_Fallback(FlightClientReactiveTest.java:109)&#13;
+&#13;
+</error>
+    </testcase>
+    <testcase name="testGetFlightById_NotFound" classname="com.booking.service.client.FlightClientReactiveTest" time="0.131" displayname="testGetFlightById_NotFound()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.client.FlightClientReactiveTest]/[method:testGetFlightById_NotFound()]"/>
+    <testcase name="testGetFlightById_Success" classname="com.booking.service.client.FlightClientReactiveTest" time="0.017" displayname="testGetFlightById_Success()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.client.FlightClientReactiveTest]/[method:testGetFlightById_Success()]"/>
+  </testsuite>
+</testrun>

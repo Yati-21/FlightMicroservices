@@ -1,0 +1,87 @@
+package com.user.service.exception;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.support.WebExchangeBindException;
+import reactor.test.StepVerifier;
+
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class GlobalErrorHandlerTest {
+
+    GlobalErrorHandler handler = new GlobalErrorHandler();
+
+    // -------------------------------
+    // VALIDATION ERROR
+    // -------------------------------
+    @Test
+    void testHandleWebExchangeBindException() {
+
+        BeanPropertyBindingResult result = new BeanPropertyBindingResult(new Object(), "obj");
+        result.addError(new FieldError("obj", "field1", "must not be null"));
+
+        WebExchangeBindException ex = new WebExchangeBindException(null, result);
+
+        StepVerifier.create(handler.handleWebExchangeBindException(ex))
+                .assertNext(resp -> {
+                    assertEquals(HttpStatus.BAD_REQUEST, resp.getStatusCode());
+                    Map<String, Object> body = resp.getBody();
+                    assertEquals("Validation failed", body.get("message"));
+                    assertTrue(((Map<?, ?>) body.get("errors")).containsKey("field1"));
+                })
+                .verifyComplete();
+    }
+
+    // -------------------------------
+    // NOT FOUND
+    // -------------------------------
+    @Test
+    void testHandleNotFound() {
+
+        NotFoundException ex = new NotFoundException("User Not Found");
+
+        StepVerifier.create(handler.handleNotFound(ex))
+                .assertNext(resp -> {
+                    assertEquals(HttpStatus.NOT_FOUND, resp.getStatusCode());
+                    assertEquals("User Not Found", resp.getBody().get("error"));
+                })
+                .verifyComplete();
+    }
+
+    // -------------------------------
+    // BUSINESS EXCEPTION
+    // -------------------------------
+    @Test
+    void testHandleBusinessException() {
+
+        BusinessException ex = new BusinessException("Business Rule Failed");
+
+        StepVerifier.create(handler.handleBusinessException(ex))
+                .assertNext(resp -> {
+                    assertEquals(HttpStatus.BAD_REQUEST, resp.getStatusCode());
+                    assertEquals("Business Rule Failed", resp.getBody().get("error"));
+                })
+                .verifyComplete();
+    }
+
+    // -------------------------------
+    // GENERAL EXCEPTION
+    // -------------------------------
+    @Test
+    void testHandleGeneralException() {
+
+        Exception ex = new Exception("Something broke");
+
+        StepVerifier.create(handler.handleGeneralException(ex))
+                .assertNext(resp -> {
+                    assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, resp.getStatusCode());
+                    assertTrue(resp.getBody().get("error").toString()
+                            .contains("Unexpected error"));
+                })
+                .verifyComplete();
+    }
+}

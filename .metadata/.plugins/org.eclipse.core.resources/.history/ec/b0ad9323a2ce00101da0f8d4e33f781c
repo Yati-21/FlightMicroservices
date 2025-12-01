@@ -1,0 +1,107 @@
+package com.booking.service.client;
+
+import com.booking.service.client.UserClientReactive;
+import com.booking.service.dto.UserDto;
+import com.booking.service.exception.BusinessException;
+import com.booking.service.exception.NotFoundException;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreaker;
+import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreakerFactory;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+public class UserClientReactiveTest {
+
+    private WebClient.Builder webClientBuilder;
+    private WebClient webClient;
+    private ReactiveCircuitBreakerFactory cbFactory;
+    private ReactiveCircuitBreaker cb;
+
+    private UserClientReactive client;
+
+    @BeforeEach
+    void setup() {
+
+        webClientBuilder = mock(WebClient.Builder.class);
+        webClient = mock(WebClient.class);
+
+        cbFactory = mock(ReactiveCircuitBreakerFactory.class);
+        cb = mock(ReactiveCircuitBreaker.class);
+
+        when(webClientBuilder.build()).thenReturn(webClient);
+        when(cbFactory.create(anyString())).thenReturn(cb);
+
+        client = new UserClientReactive(webClientBuilder, cbFactory);
+    }
+
+
+    @Test
+    void testGetUserById_Success() {
+
+        UserDto dto = new UserDto();
+        dto.setId("U1");
+
+        WebClient.RequestHeadersUriSpec req = mock(WebClient.RequestHeadersUriSpec.class);
+        WebClient.RequestHeadersSpec req2 = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.ResponseSpec resp = mock(WebClient.ResponseSpec.class);
+
+        when(webClient.get()).thenReturn(req);
+        when(req.uri(anyString(), anyString())).thenReturn(req2);
+        when(req2.retrieve()).thenReturn(resp);
+        when(resp.onStatus(any(), any())).thenReturn(resp);
+        when(resp.bodyToMono(UserDto.class)).thenReturn(Mono.just(dto));
+
+        when(cb.run(any(), any())).thenAnswer(inv ->
+                ((Mono<UserDto>) inv.getArgument(0))
+        );
+
+        StepVerifier.create(client.getUserById("U1"))
+                .expectNext(dto)
+                .verifyComplete();
+    }
+
+
+    @Test
+    void testGetUserById_404() {
+
+        WebClient.RequestHeadersUriSpec req = mock(WebClient.RequestHeadersUriSpec.class);
+        WebClient.RequestHeadersSpec req2 = mock(WebClient.RequestHeadersSpec.class);
+        WebClient.ResponseSpec resp = mock(WebClient.ResponseSpec.class);
+
+        when(webClient.get()).thenReturn(req);
+        when(req.uri(anyString(), anyString())).thenReturn(req2);
+        when(req2.retrieve()).thenReturn(resp);
+
+        when(resp.onStatus(any(), any())).thenAnswer(inv ->
+                Mono.error(new NotFoundException("User not found"))
+        );
+
+        when(cb.run(any(), any())).thenAnswer(inv -> ((Mono<?>) inv.getArgument(0)));
+
+        StepVerifier.create(client.getUserById("X"))
+                .expectError(NotFoundException.class)
+                .verify();
+    }
+
+
+    @Test
+    void testGetUserById_Fallback() {
+
+        when(cb.run(any(), any()))
+                .thenReturn(Mono.error(new BusinessException("User service unavailable")));
+
+        StepVerifier.create(client.getUserById("U1"))
+                .expectError(BusinessException.class)
+                .verify();
+    }
+}

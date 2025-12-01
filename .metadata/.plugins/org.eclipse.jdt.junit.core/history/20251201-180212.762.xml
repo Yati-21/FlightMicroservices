@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?><testrun name="BookingServiceImplTest" project="booking-service" tests="15" started="15" failures="1" errors="0" ignored="0">
+  <testsuite name="com.booking.service.service.BookingServiceImplTest" time="2.122" displayname="BookingServiceImplTest" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.service.BookingServiceImplTest]">
+    <testcase name="testBookTicket_FlightNotFound" classname="com.booking.service.service.BookingServiceImplTest" time="1.93" displayname="testBookTicket_FlightNotFound()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.service.BookingServiceImplTest]/[method:testBookTicket_FlightNotFound()]"/>
+    <testcase name="testBookTicket_PassengerCountMismatch" classname="com.booking.service.service.BookingServiceImplTest" time="0.002" displayname="testBookTicket_PassengerCountMismatch()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.service.BookingServiceImplTest]/[method:testBookTicket_PassengerCountMismatch()]"/>
+    <testcase name="testBookTicket_DuplicateSeat" classname="com.booking.service.service.BookingServiceImplTest" time="0.002" displayname="testBookTicket_DuplicateSeat()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.service.BookingServiceImplTest]/[method:testBookTicket_DuplicateSeat()]"/>
+    <testcase name="testBookTicket_SeatConflict" classname="com.booking.service.service.BookingServiceImplTest" time="0.082" displayname="testBookTicket_SeatConflict()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.service.BookingServiceImplTest]/[method:testBookTicket_SeatConflict()]">
+      <failure>java.lang.AssertionError: expectation "expectError(Class)" failed (expected error of type: SeatUnavailableException; actual type: java.lang.NullPointerException: Cannot invoke "reactor.core.publisher.Mono.flatMap(java.util.function.Function)" because the return value of "com.booking.service.repository.BookingRepository.save(Object)" is null)&#13;
+	at reactor.test.MessageFormatter.assertionError(MessageFormatter.java:115)&#13;
+	at reactor.test.MessageFormatter.failPrefix(MessageFormatter.java:104)&#13;
+	at reactor.test.MessageFormatter.fail(MessageFormatter.java:73)&#13;
+	at reactor.test.MessageFormatter.failOptional(MessageFormatter.java:88)&#13;
+	at reactor.test.DefaultStepVerifierBuilder.lambda$expectError$1(DefaultStepVerifierBuilder.java:381)&#13;
+	at reactor.test.DefaultStepVerifierBuilder$SignalEvent.test(DefaultStepVerifierBuilder.java:2339)&#13;
+	at reactor.test.DefaultStepVerifierBuilder$DefaultVerifySubscriber.onSignal(DefaultStepVerifierBuilder.java:1554)&#13;
+	at reactor.test.DefaultStepVerifierBuilder$DefaultVerifySubscriber.onExpectation(DefaultStepVerifierBuilder.java:1501)&#13;
+	at reactor.test.DefaultStepVerifierBuilder$DefaultVerifySubscriber.onError(DefaultStepVerifierBuilder.java:1151)&#13;
+	at reactor.core.publisher.MonoFlatMap$FlatMapMain.secondError(MonoFlatMap.java:242)&#13;
+	at reactor.core.publisher.MonoFlatMap$FlatMapInner.onError(MonoFlatMap.java:317)&#13;
+	at reactor.core.publisher.Operators.error(Operators.java:198)&#13;
+	at reactor.core.publisher.FluxFlatMap.trySubscribeScalarMap(FluxFlatMap.java:162)&#13;
+	at reactor.core.publisher.MonoFlatMap.subscribeOrReturn(MonoFlatMap.java:53)&#13;
+	at reactor.core.publisher.InternalMonoOperator.subscribe(InternalMonoOperator.java:62)&#13;
+	at reactor.core.publisher.MonoFlatMap$FlatMapMain.onNext(MonoFlatMap.java:166)&#13;
+	at reactor.core.publisher.MonoZip$ZipCoordinator.signal(MonoZip.java:296)&#13;
+	at reactor.core.publisher.MonoZip$ZipInner.onNext(MonoZip.java:480)&#13;
+	at reactor.core.publisher.Operators$ScalarSubscription.request(Operators.java:2565)&#13;
+	at reactor.core.publisher.MonoZip$ZipInner.onSubscribe(MonoZip.java:472)&#13;
+	at reactor.core.publisher.MonoJust.subscribe(MonoJust.java:56)&#13;
+	at reactor.core.publisher.MonoZip$ZipCoordinator.request(MonoZip.java:219)&#13;
+	at reactor.core.publisher.MonoFlatMap$FlatMapMain.request(MonoFlatMap.java:195)&#13;
+	at reactor.test.DefaultStepVerifierBuilder$DefaultVerifySubscriber.onSubscribe(DefaultStepVerifierBuilder.java:1183)&#13;
+	at reactor.core.publisher.MonoFlatMap$FlatMapMain.onSubscribe(MonoFlatMap.java:118)&#13;
+	at reactor.core.publisher.MonoZip.subscribe(MonoZip.java:129)&#13;
+	at reactor.core.publisher.Mono.subscribe(Mono.java:4569)&#13;
+	at reactor.test.DefaultStepVerifierBuilder$DefaultStepVerifier.toVerifierAndSubscribe(DefaultStepVerifierBuilder.java:904)&#13;
+	at reactor.test.DefaultStepVerifierBuilder$DefaultStepVerifier.verify(DefaultStepVerifierBuilder.java:844)&#13;
+	at reactor.test.DefaultStepVerifierBuilder$DefaultStepVerifier.verify(DefaultStepVerifierBuilder.java:836)&#13;
+	at com.booking.service.service.BookingServiceImplTest.testBookTicket_SeatConflict(BookingServiceImplTest.java:223)&#13;
+	Suppressed: java.lang.NullPointerException: Cannot invoke "reactor.core.publisher.Mono.flatMap(java.util.function.Function)" because the return value of "com.booking.service.repository.BookingRepository.save(Object)" is null&#13;
+		at com.booking.service.service.BookingServiceImpl.saveNewBookingReactive(BookingServiceImpl.java:211)&#13;
+		at com.booking.service.service.BookingServiceImpl.lambda$1(BookingServiceImpl.java:92)&#13;
+		at reactor.core.publisher.FluxFlatMap.trySubscribeScalarMap(FluxFlatMap.java:153)&#13;
+		... 18 more&#13;
+&#13;
+</failure>
+    </testcase>
+    <testcase name="testGetTicket_Success" classname="com.booking.service.service.BookingServiceImplTest" time="0.029" displayname="testGetTicket_Success()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.service.BookingServiceImplTest]/[method:testGetTicket_Success()]"/>
+    <testcase name="testBookTicket_NotEnoughSeats" classname="com.booking.service.service.BookingServiceImplTest" time="0.004" displayname="testBookTicket_NotEnoughSeats()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.service.BookingServiceImplTest]/[method:testBookTicket_NotEnoughSeats()]"/>
+    <testcase name="testCancelBooking_InvalidPNR" classname="com.booking.service.service.BookingServiceImplTest" time="0.006" displayname="testCancelBooking_InvalidPNR()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.service.BookingServiceImplTest]/[method:testCancelBooking_InvalidPNR()]"/>
+    <testcase name="testHistoryByUserId_Success" classname="com.booking.service.service.BookingServiceImplTest" time="0.002" displayname="testHistoryByUserId_Success()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.service.BookingServiceImplTest]/[method:testHistoryByUserId_Success()]"/>
+    <testcase name="testCancelBooking_Success" classname="com.booking.service.service.BookingServiceImplTest" time="0.012" displayname="testCancelBooking_Success()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.service.BookingServiceImplTest]/[method:testCancelBooking_Success()]"/>
+    <testcase name="testHistoryByEmail_Success" classname="com.booking.service.service.BookingServiceImplTest" time="0.004" displayname="testHistoryByEmail_Success()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.service.BookingServiceImplTest]/[method:testHistoryByEmail_Success()]"/>
+    <testcase name="testBookTicket_UserNotFound" classname="com.booking.service.service.BookingServiceImplTest" time="0.004" displayname="testBookTicket_UserNotFound()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.service.BookingServiceImplTest]/[method:testBookTicket_UserNotFound()]"/>
+    <testcase name="testGetTicket_NotFound" classname="com.booking.service.service.BookingServiceImplTest" time="0.002" displayname="testGetTicket_NotFound()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.service.BookingServiceImplTest]/[method:testGetTicket_NotFound()]"/>
+    <testcase name="testCancelBooking_TooLate" classname="com.booking.service.service.BookingServiceImplTest" time="0.004" displayname="testCancelBooking_TooLate()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.service.BookingServiceImplTest]/[method:testCancelBooking_TooLate()]"/>
+    <testcase name="testBookTicket_Success" classname="com.booking.service.service.BookingServiceImplTest" time="0.027" displayname="testBookTicket_Success()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.service.BookingServiceImplTest]/[method:testBookTicket_Success()]"/>
+    <testcase name="testHistoryByEmail_UserIdNull" classname="com.booking.service.service.BookingServiceImplTest" time="0.005" displayname="testHistoryByEmail_UserIdNull()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.service.BookingServiceImplTest]/[method:testHistoryByEmail_UserIdNull()]"/>
+  </testsuite>
+</testrun>

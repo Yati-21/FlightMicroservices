@@ -1,0 +1,66 @@
+package com.user.service.exception;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.support.WebExchangeBindException;
+
+import reactor.test.StepVerifier;
+
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class GlobalErrorHandlerTest {
+
+	GlobalErrorHandler handler = new GlobalErrorHandler();
+
+	@Test
+	void testValidationErrors() {
+		BeanPropertyBindingResult result = new BeanPropertyBindingResult(new Object(), "obj");
+		result.addError(new FieldError("obj", "field1", "must not be null"));
+
+		WebExchangeBindException ex = new WebExchangeBindException(null, result);
+
+		StepVerifier.create(handler.handleValidationErrors(ex)).assertNext(resp -> {
+			Map<String, Object> body = resp.getBody();
+			assertEquals(400, body.get("status"));
+			assertTrue(((Map<?, ?>) body.get("errors")).containsKey("field1"));
+		}).verifyComplete();
+	}
+
+	@Test
+	void testNotFoundHandler() {
+		NotFoundException ex = new NotFoundException("Not found");
+
+		StepVerifier.create(handler.handleNotFound(ex)).assertNext(resp -> {
+			assertEquals(HttpStatus.NOT_FOUND, resp.getStatusCode());
+			assertEquals("Not found", resp.getBody().get("error"));
+		}).verifyComplete();
+	}
+
+	
+
+	@Test
+	void testBusinessExceptionHandler() {
+		BusinessException ex = new BusinessException("Biz fail");
+
+		StepVerifier.create(handler.handleBusiness(ex)).assertNext(resp -> {
+			assertEquals(HttpStatus.BAD_REQUEST, resp.getStatusCode());
+			assertEquals("Biz fail", resp.getBody().get("error"));
+		}).verifyComplete();
+	}
+
+	@Test
+	void testGeneralExceptionHandler() {
+		Exception ex = new Exception("Something broke");
+
+		StepVerifier.create(handler.handleGeneral(ex)).assertNext(resp -> {
+			assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, resp.getStatusCode());
+			assertTrue(resp.getBody().get("error").contains("Unexpected error"));
+		}).verifyComplete();
+	}
+}

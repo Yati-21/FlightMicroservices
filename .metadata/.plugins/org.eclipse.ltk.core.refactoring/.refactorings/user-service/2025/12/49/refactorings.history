@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename compilation unit &apos;com.user.service.exception.CustomExceptionTest.java&apos; to &apos;CustomExceptionTests.java&apos;&#x0D;&#x0A;- Original project: &apos;user-service&apos;&#x0D;&#x0A;- Original element: &apos;com.user.service.exception.CustomExceptionTest.java&apos;&#x0D;&#x0A;- Renamed element: &apos;com.user.service.exception.CustomExceptionTests.java&apos;" description="Rename compilation unit &apos;CustomExceptionTest.java&apos;" flags="2" id="org.eclipse.jdt.ui.rename.compilationunit" input="/src\/test\/java=/optional=/true=/=/maven.pomderived=/true=/=/test=/true=/&lt;com.user.service.exception{CustomExceptionTest.java" name="CustomExceptionTests.java" references="false" stamp="1764594582703" version="1.0"/>
+</session>

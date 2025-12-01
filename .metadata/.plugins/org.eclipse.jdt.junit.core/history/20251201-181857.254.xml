@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?><testrun name="FlightClientReactiveTest" project="booking-service" tests="3" started="3" failures="0" errors="1" ignored="0">
+  <testsuite name="com.booking.service.client.FlightClientReactiveTest" time="2.118" displayname="FlightClientReactiveTest" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.client.FlightClientReactiveTest]">
+    <testcase name="testGetFlightById_Fallback" classname="com.booking.service.client.FlightClientReactiveTest" time="2.0" displayname="testGetFlightById_Fallback()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.client.FlightClientReactiveTest]/[method:testGetFlightById_Fallback()]">
+      <error>java.lang.NullPointerException: Cannot invoke "org.springframework.web.reactive.function.client.WebClient$RequestHeadersUriSpec.uri(String, Object[])" because the return value of "org.springframework.web.reactive.function.client.WebClient.get()" is null&#13;
+	at com.booking.service.client.FlightClientReactive.getFlightById(FlightClientReactive.java:30)&#13;
+	at com.booking.service.client.FlightClientReactiveTest.testGetFlightById_Fallback(FlightClientReactiveTest.java:119)&#13;
+&#13;
+</error>
+    </testcase>
+    <testcase name="testGetFlightById_NotFound" classname="com.booking.service.client.FlightClientReactiveTest" time="0.097" displayname="testGetFlightById_NotFound()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.client.FlightClientReactiveTest]/[method:testGetFlightById_NotFound()]"/>
+    <testcase name="testGetFlightById_Success" classname="com.booking.service.client.FlightClientReactiveTest" time="0.02" displayname="testGetFlightById_Success()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.client.FlightClientReactiveTest]/[method:testGetFlightById_Success()]"/>
+  </testsuite>
+</testrun>

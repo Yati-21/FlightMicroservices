@@ -1,45 +1,73 @@
 package com.booking.service.exception;
 
-import com.booking.service.controller.BookingController;
-import com.booking.service.service.BookingService;
-
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.support.WebExchangeBindException;
+import reactor.test.StepVerifier;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.reactive.server.WebTestClient;
 
-import reactor.core.publisher.Mono;
+import java.util.Map;
 
-@WebFluxTest(controllers = BookingController.class)
 class GlobalErrorHandlerTest {
 
-	@Autowired
-	private WebTestClient client;
-
-	@MockitoBean
-	private BookingService service;
+	GlobalErrorHandler handler = new GlobalErrorHandler();
 
 	@Test
-	void testNotFound() {
-		Mockito.when(service.getTicket("X")).thenReturn(Mono.error(new NotFoundException("PNR not found")));
+	void testValidationErrors() {
+		BeanPropertyBindingResult result = new BeanPropertyBindingResult(new Object(), "obj");
+		result.addError(new FieldError("obj", "field1", "must not be null"));
 
-		client.get().uri("/bookings/get/X").exchange().expectStatus().isNotFound();
+		WebExchangeBindException ex = new WebExchangeBindException(null, result);
+
+		StepVerifier.create(handler.handleValidationErrors(ex)).assertNext(resp -> {
+			Map<String, Object> body = resp.getBody();
+			assertEquals(400, body.get("status"));
+			assertTrue(((Map<?, ?>) body.get("errors")).containsKey("field1"));
+		}).verifyComplete();
 	}
 
 	@Test
-	void testBusinessException() {
-		Mockito.when(service.cancelBooking("X")).thenReturn(Mono.error(new BusinessException("Cannot cancel")));
+	void testNotFoundHandler() {
+		NotFoundException ex = new NotFoundException("Not found");
 
-		client.delete().uri("/bookings/cancel/X").exchange().expectStatus().isBadRequest();
+		StepVerifier.create(handler.handleNotFound(ex)).assertNext(resp -> {
+			assertEquals(HttpStatus.NOT_FOUND, resp.getStatusCode());
+			assertEquals("Not found", resp.getBody().get("error"));
+		}).verifyComplete();
 	}
 
 	@Test
-	void testUnexpectedException() {
-		Mockito.when(service.getTicket("Z")).thenReturn(Mono.error(new RuntimeException("Boom")));
+	void testSeatUnavailableHandler() {
+		SeatUnavailableException ex = new SeatUnavailableException("Seat error");
 
-		client.get().uri("/bookings/get/Z").exchange().expectStatus().is5xxServerError();
+		StepVerifier.create(handler.handleSeatUnavailable(ex)).assertNext(resp -> {
+			assertEquals(HttpStatus.BAD_REQUEST, resp.getStatusCode());
+			assertEquals("Seat error", resp.getBody().get("error"));
+		}).verifyComplete();
+	}
+
+	@Test
+	void testBusinessExceptionHandler() {
+		BusinessException ex = new BusinessException("Biz fail");
+
+		StepVerifier.create(handler.handleBusiness(ex)).assertNext(resp -> {
+			assertEquals(HttpStatus.BAD_REQUEST, resp.getStatusCode());
+			assertEquals("Biz fail", resp.getBody().get("error"));
+		}).verifyComplete();
+	}
+
+	@Test
+	void testGeneralExceptionHandler() {
+		Exception ex = new Exception("Something broke");
+
+		StepVerifier.create(handler.handleGeneral(ex)).assertNext(resp -> {
+			assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, resp.getStatusCode());
+			assertTrue(resp.getBody().get("error").contains("Unexpected error"));
+		}).verifyComplete();
 	}
 }

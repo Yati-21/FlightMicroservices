@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?><testrun name="FlightClientReactiveTest" project="booking-service" tests="3" started="3" failures="0" errors="3" ignored="0">
+  <testsuite name="com.booking.service.client.FlightClientReactiveTest" time="1.926" displayname="FlightClientReactiveTest" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.client.FlightClientReactiveTest]">
+    <testcase name="testGetFlightById_Fallback" classname="com.booking.service.client.FlightClientReactiveTest" time="1.916" displayname="testGetFlightById_Fallback()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.client.FlightClientReactiveTest]/[method:testGetFlightById_Fallback()]">
+      <error>java.lang.NullPointerException: Cannot invoke "org.springframework.web.reactive.function.client.WebClient$RequestHeadersUriSpec.uri(String, Object[])" because the return value of "org.springframework.web.reactive.function.client.WebClient.get()" is null&#13;
+	at com.booking.service.client.FlightClientReactive.getFlightById(FlightClientReactive.java:30)&#13;
+	at com.booking.service.client.FlightClientReactiveTest.testGetFlightById_Fallback(FlightClientReactiveTest.java:115)&#13;
+&#13;
+</error>
+    </testcase>
+    <testcase name="testGetFlightById_NotFound" classname="com.booking.service.client.FlightClientReactiveTest" time="0.004" displayname="testGetFlightById_NotFound()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.client.FlightClientReactiveTest]/[method:testGetFlightById_NotFound()]">
+      <error>java.lang.Error: Unresolved compilation problems: 
+	The method thenReturn(WebClient.RequestHeadersUriSpec&lt;capture#14-of ?&gt;) in the type OngoingStubbing&lt;WebClient.RequestHeadersUriSpec&lt;capture#14-of ?&gt;&gt; is not applicable for the arguments (WebClient.RequestHeadersUriSpec&lt;capture#15-of ?&gt;)
+	The method thenReturn(capture#16-of ?) in the type OngoingStubbing&lt;capture#16-of ?&gt; is not applicable for the arguments (WebClient.RequestHeadersSpec&lt;capture#17-of ?&gt;)
+&#13;
+	at com.booking.service.client.FlightClientReactiveTest.testGetFlightById_NotFound(FlightClientReactiveTest.java:81)&#13;
+&#13;
+</error>
+    </testcase>
+    <testcase name="testGetFlightById_Success" classname="com.booking.service.client.FlightClientReactiveTest" time="0.004" displayname="testGetFlightById_Success()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.client.FlightClientReactiveTest]/[method:testGetFlightById_Success()]">
+      <error>java.lang.Error: Unresolved compilation problems: 
+	The method thenReturn(WebClient.RequestHeadersUriSpec&lt;capture#9-of ?&gt;) in the type OngoingStubbing&lt;WebClient.RequestHeadersUriSpec&lt;capture#9-of ?&gt;&gt; is not applicable for the arguments (WebClient.RequestHeadersUriSpec&lt;capture#10-of ?&gt;)
+	The method thenReturn(capture#11-of ?) in the type OngoingStubbing&lt;capture#11-of ?&gt; is not applicable for the arguments (WebClient.RequestHeadersSpec&lt;capture#12-of ?&gt;)
+&#13;
+	at com.booking.service.client.FlightClientReactiveTest.testGetFlightById_Success(FlightClientReactiveTest.java:58)&#13;
+&#13;
+</error>
+    </testcase>
+  </testsuite>
+</testrun>

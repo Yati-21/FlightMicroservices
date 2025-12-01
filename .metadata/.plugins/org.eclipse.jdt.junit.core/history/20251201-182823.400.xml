@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?><testrun name="CustomExceptionTests" project="booking-service" tests="3" started="3" failures="0" errors="0" ignored="0">
+  <testsuite name="com.booking.service.exception.CustomExceptionTests" time="0.001" displayname="CustomExceptionTests" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.exception.CustomExceptionTests]">
+    <testcase name="testNotFoundException" classname="com.booking.service.exception.CustomExceptionTests" time="0.001" displayname="testNotFoundException()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.exception.CustomExceptionTests]/[method:testNotFoundException()]"/>
+    <testcase name="testSeatUnavailableException" classname="com.booking.service.exception.CustomExceptionTests" time="0.0" displayname="testSeatUnavailableException()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.exception.CustomExceptionTests]/[method:testSeatUnavailableException()]"/>
+    <testcase name="testBusinessException" classname="com.booking.service.exception.CustomExceptionTests" time="0.0" displayname="testBusinessException()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.exception.CustomExceptionTests]/[method:testBusinessException()]"/>
+  </testsuite>
+</testrun>

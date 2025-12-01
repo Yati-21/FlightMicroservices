@@ -27,7 +27,7 @@ public class FlightClientReactive {
 
         Mono<FlightDto> call = webClientBuilder.build()
                 .get()
-                .uri("http://flight-service/flights/get/{id}", flightId)   // ✔ CORRECT PATH
+                .uri("http://flight-service/flights/get/{id}", flightId)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError,
                         r -> Mono.error(new NotFoundException("Flight not found")))

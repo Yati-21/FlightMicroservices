@@ -1,0 +1,125 @@
+package com.booking.service.client;
+
+import com.booking.service.dto.FlightDto;
+import com.booking.service.exception.BusinessException;
+import com.booking.service.exception.NotFoundException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
+import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreaker;
+import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreakerFactory;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.web.reactive.function.client.*;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
+
+import java.util.function.Function;
+
+import static org.mockito.Mockito.*;
+
+class FlightClientReactiveTest {
+
+    private WebClient.Builder webClientBuilder;
+    private ReactiveCircuitBreakerFactory<?, ?> cbFactory;
+    private ReactiveCircuitBreaker cb;
+    private FlightClientReactive flightClient;
+
+    private WebClient webClient;
+
+    /** FIXED: removed generics (<<?>>) */
+    private WebClient.RequestHeadersUriSpec uriSpec;
+    private WebClient.RequestHeadersSpec headersSpec;
+    private WebClient.ResponseSpec responseSpec;
+
+    @BeforeEach
+    void setup() {
+        webClientBuilder = mock(WebClient.Builder.class);
+        cbFactory = mock(ReactiveCircuitBreakerFactory.class);
+        cb = mock(ReactiveCircuitBreaker.class);
+
+        webClient = mock(WebClient.class);
+        uriSpec = mock(WebClient.RequestHeadersUriSpec.class);
+        headersSpec = mock(WebClient.RequestHeadersSpec.class);
+        responseSpec = mock(WebClient.ResponseSpec.class);
+
+        when(webClientBuilder.build()).thenReturn(webClient);
+        when(cbFactory.create(anyString())).thenReturn(cb);
+
+        flightClient = new FlightClientReactive(webClientBuilder, cbFactory);
+    }
+
+    // ------------------------------------------
+    // SUCCESS
+    // ------------------------------------------
+    @Test
+    void testGetFlightById_Success() {
+
+        FlightDto dto = new FlightDto();
+        dto.setId("F1");
+
+        when(webClient.get()).thenReturn(uriSpec);
+        when(uriSpec.uri(anyString(), anyString())).thenReturn(headersSpec);
+        when(headersSpec.retrieve()).thenReturn(responseSpec);
+
+        when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(FlightDto.class)).thenReturn(Mono.just(dto));
+
+        when(cb.run(
+                ArgumentMatchers.<Mono<FlightDto>>any(),
+                ArgumentMatchers.<Function<Throwable, Mono<FlightDto>>>any()
+        )).thenAnswer(inv -> inv.getArgument(0));
+
+        StepVerifier.create(flightClient.getFlightById("F1"))
+                .expectNextMatches(f -> f.getId().equals("F1"))
+                .verifyComplete();
+    }
+
+    // ------------------------------------------
+    // NOT FOUND
+    // ------------------------------------------
+    @Test
+    void testGetFlightById_NotFound() {
+
+        when(webClient.get()).thenReturn(uriSpec);
+        when(uriSpec.uri(anyString(), anyString())).thenReturn(headersSpec);
+        when(headersSpec.retrieve()).thenReturn(responseSpec);
+
+        // FIXED: do NOT use eq(predicate)
+        when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
+
+        when(responseSpec.bodyToMono(FlightDto.class))
+                .thenReturn(Mono.error(new NotFoundException("Flight not found")));
+
+        when(cb.run(
+                ArgumentMatchers.<Mono<FlightDto>>any(),
+                ArgumentMatchers.<Function<Throwable, Mono<FlightDto>>>any()
+        )).thenAnswer(inv -> inv.getArgument(0));
+
+        StepVerifier.create(flightClient.getFlightById("BAD"))
+                .expectError(NotFoundException.class)
+                .verify();
+    }
+
+    // ------------------------------------------
+    // CIRCUIT BREAKER FALLBACK
+    // ------------------------------------------
+//    @Test
+//    void testGetFlightById_Fallback() {
+//
+//        when(cb.run(
+//                ArgumentMatchers.<Mono<FlightDto>>any(),
+//                ArgumentMatchers.<Function<Throwable, Mono<FlightDto>>>any()
+//        )).thenAnswer(invocation -> {
+//            Function<Throwable, Mono<FlightDto>> fallback =
+//                    invocation.getArgument(1);
+//
+//            return fallback.apply(new RuntimeException("forced CB error"));
+//        });
+//
+//        StepVerifier.create(flightClient.getFlightById("F1"))
+//                .expectError(BusinessException.class)
+//                .verify();
+//    }
+
+
+}

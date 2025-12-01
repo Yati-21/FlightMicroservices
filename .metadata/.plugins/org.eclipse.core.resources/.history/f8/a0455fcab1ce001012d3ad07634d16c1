@@ -1,0 +1,349 @@
+package com.booking.service.service;
+
+import com.booking.service.client.FlightClientReactive;
+import com.booking.service.client.UserClientReactive;
+import com.booking.service.dto.FlightDto;
+import com.booking.service.dto.UserDto;
+import com.booking.service.entity.*;
+import com.booking.service.exception.BusinessException;
+import com.booking.service.exception.NotFoundException;
+import com.booking.service.exception.SeatUnavailableException;
+import com.booking.service.repository.BookingRepository;
+import com.booking.service.repository.PassengerRepository;
+import com.booking.service.request.BookingRequest;
+import com.booking.service.request.PassengerRequest;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+public class BookingServiceImplTest {
+
+    private BookingRepository bookingRepo;
+    private PassengerRepository passengerRepo;
+    private UserClientReactive userClient;
+    private FlightClientReactive flightClient;
+
+    private BookingServiceImpl service;
+
+    @BeforeEach
+    void setup() {
+        bookingRepo = mock(BookingRepository.class);
+        passengerRepo = mock(PassengerRepository.class);
+        userClient = mock(UserClientReactive.class);
+        flightClient = mock(FlightClientReactive.class);
+
+        service = new BookingServiceImpl(bookingRepo, userClient, flightClient, passengerRepo);
+    }
+
+    // Helper: valid booking request
+    private BookingRequest makeValidReq() {
+        BookingRequest req = new BookingRequest();
+        req.setUserId("U1");
+        req.setFlightId("F1");
+        req.setSeatsBooked(1);
+        req.setFlightType(FLIGHT_TYPE.ONE_WAY);
+        req.setMealType(MEAL_TYPE.VEG);
+
+        PassengerRequest p = new PassengerRequest();
+        p.setSeatNumber("A1");
+        p.setGender(GENDER.M);
+        p.setAge(25);
+        p.setName("John");
+
+        req.setPassengers(List.of(p));
+        return req;
+    }
+
+    // ---------------------------------------------------------
+    // 1. SUCCESSFUL BOOKING
+    // ---------------------------------------------------------
+    @Test
+    void testBookTicket_Success() {
+
+        BookingRequest req = makeValidReq();
+
+        UserDto user = new UserDto();
+        user.setId("U1");
+
+        FlightDto flight = new FlightDto();
+        flight.setId("F1");
+        flight.setTotalSeats(50);
+        flight.setDepartureTime(LocalDateTime.now().plusDays(1));
+
+        when(userClient.getUserById("U1")).thenReturn(Mono.just(user));
+        when(flightClient.getFlightById("F1")).thenReturn(Mono.just(flight));
+        when(bookingRepo.findByFlightId("F1")).thenReturn(Flux.empty());
+
+        Booking saved = new Booking();
+        saved.setId("B1");
+        saved.setPnr("PNR12345");
+        when(bookingRepo.save(any())).thenReturn(Mono.just(saved));
+
+        Passenger savedP = new Passenger();
+        savedP.setId("P1");
+        when(passengerRepo.save(any())).thenReturn(Mono.just(savedP));
+
+        StepVerifier.create(service.bookTicket(req))
+                .expectNextMatches(pnr -> pnr.startsWith("PNR"))
+                .verifyComplete();
+    }
+
+    // 2. PASSENGERS != SEATS
+    @Test
+    void testBookTicket_PassengerCountMismatch() {
+        BookingRequest req = makeValidReq();
+        req.setSeatsBooked(2); // mismatch
+
+        StepVerifier.create(service.bookTicket(req))
+                .expectError(BusinessException.class)
+                .verify();
+    }
+
+    // 3. DUPLICATE SEATS IN REQUEST
+    @Test
+    void testBookTicket_DuplicateSeat() {
+
+        BookingRequest req = new BookingRequest();
+        req.setUserId("U1");
+        req.setFlightId("F1");
+        req.setSeatsBooked(2);
+        req.setFlightType(FLIGHT_TYPE.ONE_WAY);
+        req.setMealType(MEAL_TYPE.VEG);
+
+        PassengerRequest p1 = new PassengerRequest();
+        p1.setSeatNumber("A1");
+        p1.setGender(GENDER.M);
+        p1.setAge(22);
+        p1.setName("Bob");
+
+        PassengerRequest p2 = new PassengerRequest();
+        p2.setSeatNumber("A1"); // duplicate
+        p2.setGender(GENDER.F);
+        p2.setAge(30);
+        p2.setName("Ana");
+
+        req.setPassengers(List.of(p1, p2));
+
+        StepVerifier.create(service.bookTicket(req))
+                .expectError(BusinessException.class)
+                .verify();
+    }
+
+    // 4. USER NOT FOUND (error from userClient)
+    @Test
+    void testBookTicket_UserNotFound() {
+        BookingRequest req = makeValidReq();
+
+        when(userClient.getUserById("U1"))
+                .thenReturn(Mono.error(new NotFoundException("User not found")));
+        when(flightClient.getFlightById("F1"))
+                .thenReturn(Mono.just(new FlightDto()));
+
+        StepVerifier.create(service.bookTicket(req))
+                .expectError(NotFoundException.class)
+                .verify();
+    }
+
+    // 5. FLIGHT NOT FOUND (error from flightClient)
+    @Test
+    void testBookTicket_FlightNotFound() {
+        BookingRequest req = makeValidReq();
+
+        when(userClient.getUserById("U1")).thenReturn(Mono.just(new UserDto()));
+        when(flightClient.getFlightById("F1"))
+                .thenReturn(Mono.error(new NotFoundException("Flight not found")));
+
+        StepVerifier.create(service.bookTicket(req))
+                .expectError(NotFoundException.class)
+                .verify();
+    }
+
+    // 6. EXISTING BOOKINGS → NOT ENOUGH SEATS
+    @Test
+    void testBookTicket_NotEnoughSeats() {
+
+        BookingRequest req = makeValidReq();
+
+        UserDto user = new UserDto();
+        user.setId("U1");
+
+        FlightDto flight = new FlightDto();
+        flight.setId("F1");
+        flight.setTotalSeats(1); // only 1 seat total
+
+        Booking existing = new Booking();
+        existing.setSeatsBooked(1); // already 1 booked
+
+        when(userClient.getUserById("U1")).thenReturn(Mono.just(user));
+        when(flightClient.getFlightById("F1")).thenReturn(Mono.just(flight));
+        when(bookingRepo.findByFlightId("F1"))
+                .thenReturn(Flux.just(existing));
+
+        StepVerifier.create(service.bookTicket(req))
+                .expectError(SeatUnavailableException.class)
+                .verify();
+    }
+
+    // 7. SEAT CONFLICT FROM OTHER BOOKINGS
+    @Test
+    void testBookTicket_SeatConflict() {
+
+        BookingRequest req = makeValidReq(); // seat A1
+
+        UserDto user = new UserDto();
+        user.setId("U1");
+
+        FlightDto flight = new FlightDto();
+        flight.setId("F1");
+        flight.setTotalSeats(10);
+
+        Booking existing = new Booking();
+        existing.setId("B1");
+
+        Passenger p = new Passenger();
+        p.setSeatNumber("A1"); // same seat already booked
+
+        when(userClient.getUserById("U1")).thenReturn(Mono.just(user));
+        when(flightClient.getFlightById("F1")).thenReturn(Mono.just(flight));
+        when(bookingRepo.findByFlightId("F1"))
+                .thenReturn(Flux.just(existing));
+        when(passengerRepo.findByBookingId("B1"))
+                .thenReturn(Flux.just(p));
+
+        StepVerifier.create(service.bookTicket(req))
+                .expectError(SeatUnavailableException.class)
+                .verify();
+    }
+
+    // 8. getTicket SUCCESS
+    @Test
+    void testGetTicket_Success() {
+        Booking b = new Booking();
+        b.setPnr("PNR123");
+
+        when(bookingRepo.findByPnr("PNR123"))
+                .thenReturn(Mono.just(b));
+
+        StepVerifier.create(service.getTicket("PNR123"))
+                .expectNext(b)
+                .verifyComplete();
+    }
+
+    // 9. getTicket NOT FOUND
+    @Test
+    void testGetTicket_NotFound() {
+
+        when(bookingRepo.findByPnr("PNR123"))
+                .thenReturn(Mono.empty());
+
+        StepVerifier.create(service.getTicket("PNR123"))
+                .expectError(NotFoundException.class)
+                .verify();
+    }
+
+    // 10. HISTORY BY USER ID (simple happy path)
+    @Test
+    void testHistoryByUserId_Success() {
+        Booking b = new Booking();
+        b.setUserId("U1");
+
+        when(bookingRepo.findByUserId("U1"))
+                .thenReturn(Flux.just(b));
+
+        StepVerifier.create(service.getBookingHistoryByUserId("U1"))
+                .expectNext(b)
+                .verifyComplete();
+    }
+
+    // 11. HISTORY BY EMAIL → USER ID NULL (hits error branch)
+    @Test
+    void testHistoryByEmail_UserIdNull() {
+
+        UserDto u = new UserDto(); // id null
+        when(userClient.getUserByEmail("e@mail.com"))
+                .thenReturn(Mono.just(u));
+
+        StepVerifier.create(service.getBookingHistoryByEmail("e@mail.com"))
+                .expectError(NotFoundException.class)
+                .verify();
+    }
+
+    // 12. HISTORY BY EMAIL SUCCESS
+    @Test
+    void testHistoryByEmail_Success() {
+
+        UserDto u = new UserDto();
+        u.setId("U1");
+
+        Booking b = new Booking();
+        b.setUserId("U1");
+
+        when(userClient.getUserByEmail("e@mail.com"))
+                .thenReturn(Mono.just(u));
+        when(bookingRepo.findByUserId("U1"))
+                .thenReturn(Flux.just(b));
+
+        StepVerifier.create(service.getBookingHistoryByEmail("e@mail.com"))
+                .expectNext(b)
+                .verifyComplete();
+    }
+
+    // 13. CANCEL BOOKING SUCCESS
+    @Test
+    void testCancelBooking_Success() {
+
+        Booking booking = new Booking();
+        booking.setId("B1");
+        booking.setFlightId("F1");
+
+        FlightDto flight = new FlightDto();
+        flight.setDepartureTime(LocalDateTime.now().plusDays(3));
+
+        when(bookingRepo.findByPnr("PNR")).thenReturn(Mono.just(booking));
+        when(flightClient.getFlightById("F1")).thenReturn(Mono.just(flight));
+        when(passengerRepo.findByBookingId("B1")).thenReturn(Flux.empty());
+        when(bookingRepo.delete(booking)).thenReturn(Mono.empty());
+
+        StepVerifier.create(service.cancelBooking("PNR"))
+                .verifyComplete();
+    }
+
+    // 14. CANCEL BOOKING → TOO LATE (<24 HOURS)
+    @Test
+    void testCancelBooking_TooLate() {
+
+        Booking booking = new Booking();
+        booking.setId("B1");
+        booking.setFlightId("F1");
+
+        FlightDto flight = new FlightDto();
+        flight.setDepartureTime(LocalDateTime.now().plusHours(5));
+
+        when(bookingRepo.findByPnr("PNR")).thenReturn(Mono.just(booking));
+        when(flightClient.getFlightById("F1")).thenReturn(Mono.just(flight));
+
+        StepVerifier.create(service.cancelBooking("PNR"))
+                .expectError(BusinessException.class)
+                .verify();
+    }
+
+    // 15. CANCEL BOOKING → INVALID PNR
+    @Test
+    void testCancelBooking_InvalidPNR() {
+
+        when(bookingRepo.findByPnr("BAD"))
+                .thenReturn(Mono.empty());
+
+        StepVerifier.create(service.cancelBooking("BAD"))
+                .expectError(NotFoundException.class)
+                .verify();
+    }
+}

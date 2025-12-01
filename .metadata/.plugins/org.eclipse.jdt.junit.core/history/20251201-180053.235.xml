@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?><testrun name="BookingControllerTest" project="booking-service" tests="4" started="4" failures="0" errors="0" ignored="0">
+  <testsuite name="com.booking.service.controller.BookingControllerTest" time="0.903" displayname="BookingControllerTest" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.controller.BookingControllerTest]">
+    <testcase name="testCancelBooking" classname="com.booking.service.controller.BookingControllerTest" time="0.481" displayname="testCancelBooking()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.controller.BookingControllerTest]/[method:testCancelBooking()]"/>
+    <testcase name="testCreateBooking" classname="com.booking.service.controller.BookingControllerTest" time="0.322" displayname="testCreateBooking()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.controller.BookingControllerTest]/[method:testCreateBooking()]"/>
+    <testcase name="testHistoryByUser" classname="com.booking.service.controller.BookingControllerTest" time="0.086" displayname="testHistoryByUser()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.controller.BookingControllerTest]/[method:testHistoryByUser()]"/>
+    <testcase name="testGetBooking" classname="com.booking.service.controller.BookingControllerTest" time="0.009" displayname="testGetBooking()" uniqueid="[engine:junit-jupiter]/[class:com.booking.service.controller.BookingControllerTest]/[method:testGetBooking()]"/>
+  </testsuite>
+</testrun>

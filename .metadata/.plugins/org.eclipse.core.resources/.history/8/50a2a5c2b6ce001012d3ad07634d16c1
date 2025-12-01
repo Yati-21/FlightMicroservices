@@ -1,0 +1,97 @@
+package com.user.service.exception;
+
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.support.WebExchangeBindException;
+import reactor.core.publisher.Mono;
+
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+class GlobalErrorHandlerTest {
+
+    private final GlobalErrorHandler handler = new GlobalErrorHandler();
+
+    // -----------------------------
+    // VALIDATION ERROR HANDLER
+    // -----------------------------
+    @Test
+    void testHandleValidationErrors() {
+
+        WebExchangeBindException ex = mock(WebExchangeBindException.class);
+
+        FieldError f1 = new FieldError("obj", "email", "invalid email");
+        FieldError f2 = new FieldError("obj", "name", "must not be empty");
+
+        when(ex.getFieldErrors()).thenReturn(List.of(f1, f2));
+
+        Mono<ResponseEntity<Map<String, Object>>> result = handler.handleValidationErrors(ex);
+
+        ResponseEntity<Map<String, Object>> response =
+                result.block();
+
+        assertNotNull(response);
+        assertEquals(400, response.getStatusCode().value());
+
+        Map<String, Object> body = response.getBody();
+        assertNotNull(body);
+
+        assertEquals("Validation failed", body.get("message"));
+        assertEquals(400, body.get("status"));
+
+        Map<String, String> errors = (Map<String, String>) body.get("errors");
+
+        assertEquals("invalid email", errors.get("email"));
+        assertEquals("must not be empty", errors.get("name"));
+    }
+
+    // -----------------------------
+    // NOT FOUND HANDLER
+    // -----------------------------
+    @Test
+    void testHandleNotFound() {
+
+        NotFoundException ex = new NotFoundException("User not found");
+
+        ResponseEntity<Map<String, String>> resp = handler.handleNotFound(ex).block();
+
+        assertNotNull(resp);
+        assertEquals(404, resp.getStatusCode().value());
+        assertEquals("User not found", resp.getBody().get("error"));
+    }
+
+    // -----------------------------
+    // BUSINESS EXCEPTION HANDLER
+    // -----------------------------
+    @Test
+    void testHandleBusinessException() {
+
+        BusinessException ex = new BusinessException("Invalid operation");
+
+        ResponseEntity<Map<String, String>> resp = handler.handleBusiness(ex).block();
+
+        assertNotNull(resp);
+        assertEquals(400, resp.getStatusCode().value());
+        assertEquals("Invalid operation", resp.getBody().get("error"));
+    }
+
+    // -----------------------------
+    // GENERIC EXCEPTION HANDLER
+    // -----------------------------
+    @Test
+    void testHandleGeneralException() {
+
+        Exception ex = new Exception("Something bad");
+
+        ResponseEntity<Map<String, String>> resp = handler.handleGeneral(ex).block();
+
+        assertNotNull(resp);
+        assertEquals(500, resp.getStatusCode().value());
+        assertTrue(resp.getBody().get("error").contains("Unexpected error"));
+    }
+}

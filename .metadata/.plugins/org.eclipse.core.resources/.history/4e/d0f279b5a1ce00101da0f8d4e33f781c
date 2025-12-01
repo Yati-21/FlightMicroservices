@@ -1,0 +1,19 @@
+import com.booking.service.client.UserClientReactive;
+import com.booking.service.dto.UserDto;
+import com.booking.service.exception.BusinessException;
+import com.booking.service.exception.NotFoundException;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreaker;
+import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreakerFactory;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;

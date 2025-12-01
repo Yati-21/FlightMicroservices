@@ -1,15 +1,8 @@
 package com.flight.service.service;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-
 import com.flight.service.client.AirlineClient;
 import com.flight.service.dto.AirlineDto;
 import com.flight.service.entity.AIRPORT_CODE;
-import com.flight.service.entity.FLIGHT_STATUS;
 import com.flight.service.entity.Flight;
 import com.flight.service.exception.BusinessException;
 import com.flight.service.exception.NotFoundException;
@@ -17,110 +10,187 @@ import com.flight.service.repository.FlightRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
-@ExtendWith(MockitoExtension.class)
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+import static org.mockito.Mockito.*;
+
 class FlightServiceImplTest {
 
-    @Mock
     private FlightRepository flightRepo;
-
-    @Mock
     private AirlineClient airlineClient;
 
-    @InjectMocks
     private FlightServiceImpl service;
-
-    private Flight validFlight;
-    private AirlineDto validAirline;
 
     @BeforeEach
     void setup() {
-        LocalDateTime now = LocalDateTime.now().plusDays(2);
-
-        validFlight = new Flight();
-        validFlight.setId("F1");
-        validFlight.setAirlineCode("AI");
-        validFlight.setFlightNumber("AI100");
-        validFlight.setFromCity(AIRPORT_CODE.DEL);
-        validFlight.setToCity(AIRPORT_CODE.BOM);
-        validFlight.setDepartureTime(now);
-        validFlight.setArrivalTime(now.plusHours(2));
-        validFlight.setTotalSeats(100);
-        validFlight.setAvailableSeats(100);
-        validFlight.setPrice(5000);
-        validFlight.setStatus(FLIGHT_STATUS.SCHEDULED);
-
-        validAirline = new AirlineDto();
-        validAirline.setCode("AI");
-        validAirline.setName("Air India");
+        flightRepo = mock(FlightRepository.class);
+        airlineClient = mock(AirlineClient.class);
+        service = new FlightServiceImpl(flightRepo, airlineClient);
     }
 
-    @Test
-    void addFlight_success() {
-        when(airlineClient.getAirline("AI")).thenReturn(validAirline);
-        when(flightRepo.save(any(Flight.class))).thenReturn(Mono.just(validFlight));
+    private Flight makeValidFlight() {
+        Flight f = new Flight();
+        f.setAirlineCode("AI");
+        f.setFromCity(AIRPORT_CODE.DEL);
+        f.setToCity(AIRPORT_CODE.BOM);
+        f.setTotalSeats(150);
+        f.setDepartureTime(LocalDateTime.now().plusDays(1));
+        f.setArrivalTime(LocalDateTime.now().plusDays(1).plusHours(2));
+        return f;
+    }
 
-        StepVerifier.create(service.addFlight(validFlight))
-                .expectNextMatches(f -> f.getId().equals("F1") && f.getAvailableSeats() == f.getTotalSeats())
+    // ----------------------------------------------------
+    // SUCCESS CASE
+    // ----------------------------------------------------
+    @Test
+    void testAddFlight_Success() {
+        Flight flight = makeValidFlight();
+
+        AirlineDto dto = new AirlineDto();
+        dto.setCode("AI");
+
+        when(airlineClient.getAirline("AI")).thenReturn(dto);
+        when(flightRepo.save(flight)).thenReturn(Mono.just(flight));
+
+        StepVerifier.create(service.addFlight(flight))
+                .expectNext(flight)
                 .verifyComplete();
     }
 
+    // ----------------------------------------------------
+    // Airline service throws → NotFound mapped
+    // ----------------------------------------------------
     @Test
-    void addFlight_airlineNotFound() {
-        AirlineDto empty = new AirlineDto(); // code = null
-        when(airlineClient.getAirline("AI")).thenReturn(empty);
+    void testAddFlight_AirlineServiceError() {
+        Flight flight = makeValidFlight();
 
-        StepVerifier.create(service.addFlight(validFlight))
-                .expectErrorMatches(ex -> ex instanceof NotFoundException &&
-                        ex.getMessage().equals("Airline not found"))
+        when(airlineClient.getAirline("AI")).thenThrow(new RuntimeException("down"));
+
+        StepVerifier.create(service.addFlight(flight))
+                .expectError(NotFoundException.class)
                 .verify();
     }
 
+    // ----------------------------------------------------
+    // Airline found but code is null
+    // ----------------------------------------------------
     @Test
-    void addFlight_sameSourceDestination_error() {
-        when(airlineClient.getAirline("AI")).thenReturn(validAirline);
+    void testAddFlight_AirlineNotFoundInsideDto() {
+        Flight flight = makeValidFlight();
 
-        validFlight.setToCity(AIRPORT_CODE.DEL);
+        AirlineDto dto = new AirlineDto(); // code null
+        when(airlineClient.getAirline("AI")).thenReturn(dto);
 
-        StepVerifier.create(service.addFlight(validFlight))
-                .expectErrorMatches(ex -> ex instanceof BusinessException &&
-                        ex.getMessage().contains("source and destination must be different"))
+        StepVerifier.create(service.addFlight(flight))
+                .expectError(NotFoundException.class)
                 .verify();
     }
 
+    // ----------------------------------------------------
+    // Validation: Same source & destination
+    // ----------------------------------------------------
     @Test
-    void searchFlights_success() {
-        validFlight.setDepartureTime(LocalDateTime.of(2030, 1, 1, 10, 0));
-        LocalDate date = LocalDate.of(2030, 1, 1);
+    void testAddFlight_SourceEqualsDestination() {
+        Flight flight = makeValidFlight();
+        flight.setToCity(AIRPORT_CODE.DEL);
+
+        AirlineDto dto = new AirlineDto();
+        dto.setCode("AI");
+        when(airlineClient.getAirline("AI")).thenReturn(dto);
+
+        StepVerifier.create(service.addFlight(flight))
+                .expectError(BusinessException.class)
+                .verify();
+    }
+
+    // ----------------------------------------------------
+    // Validation: Arrival before departure
+    // ----------------------------------------------------
+    @Test
+    void testAddFlight_ArrivalBeforeDeparture() {
+        Flight flight = makeValidFlight();
+        flight.setArrivalTime(flight.getDepartureTime().minusHours(2));
+
+        AirlineDto dto = new AirlineDto();
+        dto.setCode("AI");
+        when(airlineClient.getAirline("AI")).thenReturn(dto);
+
+        StepVerifier.create(service.addFlight(flight))
+                .expectError(BusinessException.class)
+                .verify();
+    }
+
+    // ----------------------------------------------------
+    // Validation: Departure in past
+    // ----------------------------------------------------
+    @Test
+    void testAddFlight_DeparturePast() {
+        Flight flight = makeValidFlight();
+        flight.setDepartureTime(LocalDateTime.now().minusDays(1));
+
+        AirlineDto dto = new AirlineDto();
+        dto.setCode("AI");
+        when(airlineClient.getAirline("AI")).thenReturn(dto);
+
+        StepVerifier.create(service.addFlight(flight))
+                .expectError(BusinessException.class)
+                .verify();
+    }
+
+    // ----------------------------------------------------
+    // Fallback (CircuitBreaker triggers)
+    // ----------------------------------------------------
+    @Test
+    void testAddFlight_FallbackMethod() {
+        Flight flight = makeValidFlight();
+
+        StepVerifier.create(service.addFlightFallback(flight, new RuntimeException()))
+                .expectError(BusinessException.class)
+                .verify();
+    }
+
+    // ----------------------------------------------------
+    // searchFlights
+    // ----------------------------------------------------
+    @Test
+    void testSearchFlights() {
+        Flight f = makeValidFlight();
+        f.setDepartureTime(LocalDateTime.now().plusDays(2));
 
         when(flightRepo.findByFromCityAndToCity(AIRPORT_CODE.DEL, AIRPORT_CODE.BOM))
-                .thenReturn(Flux.just(validFlight));
+                .thenReturn(Flux.just(f));
 
-        StepVerifier.create(service.searchFlights(AIRPORT_CODE.DEL, AIRPORT_CODE.BOM, date))
-                .expectNext(validFlight)
+        StepVerifier.create(service.searchFlights(
+                AIRPORT_CODE.DEL,
+                AIRPORT_CODE.BOM,
+                f.getDepartureTime().toLocalDate()))
+                .expectNext(f)
                 .verifyComplete();
     }
 
+    // ----------------------------------------------------
+    // getFlightById success
+    // ----------------------------------------------------
     @Test
-    void getFlightById_success() {
-        when(flightRepo.findById("F1")).thenReturn(Mono.just(validFlight));
+    void testGetFlightById_Success() {
+        Flight f = makeValidFlight();
+        when(flightRepo.findById("F1")).thenReturn(Mono.just(f));
 
         StepVerifier.create(service.getFlightById("F1"))
-                .expectNext(validFlight)
+                .expectNext(f)
                 .verifyComplete();
     }
 
+    // ----------------------------------------------------
+    // getFlightById not found
+    // ----------------------------------------------------
     @Test
-    void getFlightById_notFound() {
+    void testGetFlightById_NotFound() {
         when(flightRepo.findById("F1")).thenReturn(Mono.empty());
 
         StepVerifier.create(service.getFlightById("F1"))
@@ -128,12 +198,16 @@ class FlightServiceImplTest {
                 .verify();
     }
 
+    // ----------------------------------------------------
+    // getFlightsByAirline
+    // ----------------------------------------------------
     @Test
-    void getFlightsByAirline_success() {
-        when(flightRepo.findByAirlineCode("AI")).thenReturn(Flux.just(validFlight));
+    void testGetFlightsByAirline() {
+        Flight f = makeValidFlight();
+        when(flightRepo.findByAirlineCode("AI")).thenReturn(Flux.just(f));
 
         StepVerifier.create(service.getFlightsByAirline("AI"))
-                .expectNext(validFlight)
+                .expectNext(f)
                 .verifyComplete();
     }
 }
