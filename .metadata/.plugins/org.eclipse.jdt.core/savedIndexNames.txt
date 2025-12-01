@@ -338,7 +338,6 @@ INDEX VERSION 1.134+D:\CHUBB Training\FlightMicroservices\.metadata\.plugins\org
 3050031326.index
 2900030599.index
 3425660433.index
-3693709918.index
 313101041.index
 1292589186.index
 917902432.index
