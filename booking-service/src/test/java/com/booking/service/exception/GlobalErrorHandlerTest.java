@@ -10,7 +10,6 @@ import reactor.test.StepVerifier;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-
 import java.util.Map;
 
 class GlobalErrorHandlerTest {
@@ -21,7 +20,6 @@ class GlobalErrorHandlerTest {
 	void testValidationErrors() {
 		BeanPropertyBindingResult result = new BeanPropertyBindingResult(new Object(), "obj");
 		result.addError(new FieldError("obj", "field1", "must not be null"));
-
 		WebExchangeBindException ex = new WebExchangeBindException(null, result);
 
 		StepVerifier.create(handler.handleValidationErrors(ex)).assertNext(resp -> {
@@ -34,7 +32,6 @@ class GlobalErrorHandlerTest {
 	@Test
 	void testNotFoundHandler() {
 		NotFoundException ex = new NotFoundException("Not found");
-
 		StepVerifier.create(handler.handleNotFound(ex)).assertNext(resp -> {
 			assertEquals(HttpStatus.NOT_FOUND, resp.getStatusCode());
 			assertEquals("Not found", resp.getBody().get("error"));
@@ -44,7 +41,6 @@ class GlobalErrorHandlerTest {
 	@Test
 	void testSeatUnavailableHandler() {
 		SeatUnavailableException ex = new SeatUnavailableException("Seat error");
-
 		StepVerifier.create(handler.handleSeatUnavailable(ex)).assertNext(resp -> {
 			assertEquals(HttpStatus.BAD_REQUEST, resp.getStatusCode());
 			assertEquals("Seat error", resp.getBody().get("error"));
@@ -54,7 +50,6 @@ class GlobalErrorHandlerTest {
 	@Test
 	void testBusinessExceptionHandler() {
 		BusinessException ex = new BusinessException("Biz fail");
-
 		StepVerifier.create(handler.handleBusiness(ex)).assertNext(resp -> {
 			assertEquals(HttpStatus.BAD_REQUEST, resp.getStatusCode());
 			assertEquals("Biz fail", resp.getBody().get("error"));
@@ -64,7 +59,6 @@ class GlobalErrorHandlerTest {
 	@Test
 	void testGeneralExceptionHandler() {
 		Exception ex = new Exception("Something broke");
-
 		StepVerifier.create(handler.handleGeneral(ex)).assertNext(resp -> {
 			assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, resp.getStatusCode());
 			assertTrue(resp.getBody().get("error").contains("Unexpected error"));

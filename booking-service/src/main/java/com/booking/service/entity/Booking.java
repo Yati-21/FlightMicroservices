@@ -18,25 +18,25 @@ import lombok.NoArgsConstructor;
 @Document("bookings")
 public class Booking {
 
-    @Id
-    private String id;
+	@Id
+	private String id;
 
-    private String pnr;
+	private String pnr;
 
-    @NotBlank(message = "UserId is required")
-    private String userId;
+	@NotBlank(message = "UserId is required")
+	private String userId;
 
-    @NotBlank(message = "FlightId is required")
-    private String flightId;
+	@NotBlank(message = "FlightId is required")
+	private String flightId;
 
-    @Min(value = 1, message = "At least 1 seat must be booked")
-    private int seatsBooked;
+	@Min(value = 1, message = "At least 1 seat must be booked")
+	private int seatsBooked;
 
-    @NotNull(message = "Meal type is required")
-    private MEAL_TYPE mealType;
+	@NotNull(message = "Meal type is required")
+	private MEAL_TYPE mealType;
 
-    @NotNull(message = "flightType is required")
-    private FLIGHT_TYPE flightType;
+	@NotNull(message = "flightType is required")
+	private FLIGHT_TYPE flightType;
 
-    private List<String> passengerIds;
+	private List<String> passengerIds;
 }

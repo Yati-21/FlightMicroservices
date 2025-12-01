@@ -17,24 +17,18 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class FlightClientReactive {
 
-    private final WebClient.Builder webClientBuilder;
-    private final ReactiveCircuitBreakerFactory<?, ?> circuitBreakerFactory;
+	private final WebClient.Builder webClientBuilder;
+	private final ReactiveCircuitBreakerFactory<?, ?> circuitBreakerFactory;
 
-    private static final String FLIGHT_CB = "flightServiceCB";
+	private static final String FLIGHT_CB = "flightServiceCB";
 
-    public Mono<FlightDto> getFlightById(String flightId) {
-    	
-    	ReactiveCircuitBreaker cb = circuitBreakerFactory.create(FLIGHT_CB);
+	public Mono<FlightDto> getFlightById(String flightId) {
 
-        Mono<FlightDto> call = webClientBuilder.build()
-                .get()
-                .uri("http://flight-service/flights/get/{id}", flightId)
-                .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError,
-                        r -> Mono.error(new NotFoundException("Flight not found")))
-                .bodyToMono(FlightDto.class);
-
-        return cb.run(call, t ->
-                Mono.error(new BusinessException("Flight service unavailable")));
-    }
+		ReactiveCircuitBreaker cb = circuitBreakerFactory.create(FLIGHT_CB);
+		Mono<FlightDto> call = webClientBuilder.build().get().uri("http://flight-service/flights/get/{id}", flightId)
+				.retrieve()
+				.onStatus(HttpStatusCode::is4xxClientError, r -> Mono.error(new NotFoundException("Flight not found")))
+				.bodyToMono(FlightDto.class);
+		return cb.run(call, t -> Mono.error(new BusinessException("Flight service unavailable")));
+	}
 }

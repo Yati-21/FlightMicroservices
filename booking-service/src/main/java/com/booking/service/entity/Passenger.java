@@ -9,16 +9,11 @@ import lombok.Data;
 @Document("passengers")
 public class Passenger {
 
-    @Id
-    private String id;
-
-    private String name;
-
-    private GENDER gender;
-
-    private int age;
-
-    private String seatNumber;
-
-    private String bookingId;
+	@Id
+	private String id;
+	private String name;
+	private GENDER gender;
+	private int age;
+	private String seatNumber;
+	private String bookingId;
 }

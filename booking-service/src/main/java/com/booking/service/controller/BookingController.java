@@ -15,35 +15,34 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/bookings")
 public class BookingController {
 
-    private final BookingService service;
+	private final BookingService service;
+	public BookingController(BookingService service) {
+		this.service = service;
+	}
 
-    public BookingController(BookingService service) {
-        this.service = service;
-    }
+	@PostMapping("/create")
+	@ResponseStatus(HttpStatus.CREATED)
+	public Mono<String> createBooking(@RequestBody @Valid BookingRequest request) {
+		return service.bookTicket(request);
+	}
 
-    @PostMapping("/create")
-    @ResponseStatus(HttpStatus.CREATED)
-    public Mono<String> createBooking(@RequestBody @Valid BookingRequest request) {
-        return service.bookTicket(request);
-    }
+	@GetMapping("/get/{pnr}")
+	public Mono<Booking> getBooking(@PathVariable String pnr) {
+		return service.getTicket(pnr);
+	}
 
-    @GetMapping("/get/{pnr}")
-    public Mono<Booking> getBooking(@PathVariable String pnr) {
-        return service.getTicket(pnr);
-    }
+	@DeleteMapping("/cancel/{pnr}")
+	public Mono<Void> cancelBooking(@PathVariable String pnr) {
+		return service.cancelBooking(pnr);
+	}
 
-    @DeleteMapping("/cancel/{pnr}")
-    public Mono<Void> cancelBooking(@PathVariable String pnr) {
-        return service.cancelBooking(pnr);
-    }
+	@GetMapping("/history/user/{userId}")
+	public Flux<Booking> getUserBookings(@PathVariable String userId) {
+		return service.getBookingHistoryByUserId(userId);
+	}
 
-    @GetMapping("/history/user/{userId}")
-    public Flux<Booking> getUserBookings(@PathVariable String userId) {
-        return service.getBookingHistoryByUserId(userId);
-    }
-
-    @GetMapping("/history/email/{email}")
-    public Flux<Booking> getHistoryByEmail(@PathVariable String email) {
-        return service.getBookingHistoryByEmail(email);
-    }
+	@GetMapping("/history/email/{email}")
+	public Flux<Booking> getHistoryByEmail(@PathVariable String email) {
+		return service.getBookingHistoryByEmail(email);
+	}
 }

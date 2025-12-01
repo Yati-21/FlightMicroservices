@@ -8,10 +8,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BookingCreatedEvent {
-    private String pnr;
-    private String userEmail;
-    private String userName;
-    private String flightId;
-    private int seatsBooked;
-    private String message; //e.g. "Booking successful"
+	private String pnr;
+	private String userEmail;
+	private String userName;
+	private String flightId;
+	private int seatsBooked;
+	private String message;
 }

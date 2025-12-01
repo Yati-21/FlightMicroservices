@@ -41,35 +41,32 @@ public class BookingServiceImplTest {
 		passengerRepo = mock(PassengerRepository.class);
 		userClient = mock(UserClientReactive.class);
 		flightClient = mock(FlightClientReactive.class);
-		kafkaTemplate = mock(KafkaTemplate.class); // FIX
-
-		service = new BookingServiceImpl(bookingRepo, userClient, flightClient, passengerRepo, kafkaTemplate // FIX
+		kafkaTemplate = mock(KafkaTemplate.class); 
+		service = new BookingServiceImpl(bookingRepo, userClient, flightClient, passengerRepo, kafkaTemplate 
 		);
 	}
 
 	private BookingRequest makeValidReq() {
-		BookingRequest req = new BookingRequest();
-		req.setUserId("U1");
-		req.setFlightId("F1");
-		req.setSeatsBooked(1);
-		req.setFlightType(FLIGHT_TYPE.ONE_WAY);
-		req.setMealType(MEAL_TYPE.VEG);
+		BookingRequest bookingReq = new BookingRequest();
+		bookingReq.setUserId("U1");
+		bookingReq.setFlightId("F1");
+		bookingReq.setSeatsBooked(1);
+		bookingReq.setFlightType(FLIGHT_TYPE.ONE_WAY);
+		bookingReq.setMealType(MEAL_TYPE.VEG);
 
-		PassengerRequest p = new PassengerRequest();
-		p.setSeatNumber("A1");
-		p.setGender(GENDER.M);
-		p.setAge(25);
-		p.setName("John");
+		PassengerRequest passengerReq = new PassengerRequest();
+		passengerReq.setSeatNumber("A1");
+		passengerReq.setGender(GENDER.M);
+		passengerReq.setAge(25);
+		passengerReq.setName("John");
 
-		req.setPassengers(List.of(p));
-		return req;
+		bookingReq.setPassengers(List.of(passengerReq));
+		return bookingReq;
 	}
 
 	@Test
 	void testBookTicket_Success() {
-
-		BookingRequest req = makeValidReq();
-
+		BookingRequest bookingReq = makeValidReq();
 		UserDto user = new UserDto();
 		user.setId("U1");
 
@@ -91,79 +88,69 @@ public class BookingServiceImplTest {
 		savedP.setId("P1");
 		when(passengerRepo.save(any())).thenReturn(Mono.just(savedP));
 
-		StepVerifier.create(service.bookTicket(req)).expectNextMatches(pnr -> pnr.startsWith("PNR")).verifyComplete();
+		StepVerifier.create(service.bookTicket(bookingReq)).expectNextMatches(pnr -> pnr.startsWith("PNR"))
+				.verifyComplete();
 	}
 
 	@Test
 	void testBookTicket_PassengerCountMismatch() {
-		BookingRequest req = makeValidReq();
-		req.setSeatsBooked(2); // mismatch
-
-		StepVerifier.create(service.bookTicket(req)).expectError(BusinessException.class).verify();
+		BookingRequest bookingReq = makeValidReq();
+		bookingReq.setSeatsBooked(2);
+		StepVerifier.create(service.bookTicket(bookingReq)).expectError(BusinessException.class).verify();
 	}
 
 	@Test
 	void testBookTicket_DuplicateSeat() {
+		BookingRequest bookingReq = new BookingRequest();
+		bookingReq.setUserId("U1");
+		bookingReq.setFlightId("F1");
+		bookingReq.setSeatsBooked(2);
+		bookingReq.setFlightType(FLIGHT_TYPE.ONE_WAY);
+		bookingReq.setMealType(MEAL_TYPE.VEG);
 
-		BookingRequest req = new BookingRequest();
-		req.setUserId("U1");
-		req.setFlightId("F1");
-		req.setSeatsBooked(2);
-		req.setFlightType(FLIGHT_TYPE.ONE_WAY);
-		req.setMealType(MEAL_TYPE.VEG);
+		PassengerRequest passengerReq1 = new PassengerRequest();
+		passengerReq1.setSeatNumber("A1");
+		passengerReq1.setGender(GENDER.M);
+		passengerReq1.setAge(22);
+		passengerReq1.setName("Bob");
 
-		PassengerRequest p1 = new PassengerRequest();
-		p1.setSeatNumber("A1");
-		p1.setGender(GENDER.M);
-		p1.setAge(22);
-		p1.setName("Bob");
+		PassengerRequest passengerReq2 = new PassengerRequest();
+		passengerReq2.setSeatNumber("A1");
+		passengerReq2.setGender(GENDER.F);
+		passengerReq2.setAge(30);
+		passengerReq2.setName("Ana");
 
-		PassengerRequest p2 = new PassengerRequest();
-		p2.setSeatNumber("A1"); // duplicate
-		p2.setGender(GENDER.F);
-		p2.setAge(30);
-		p2.setName("Ana");
-
-		req.setPassengers(List.of(p1, p2));
-
-		StepVerifier.create(service.bookTicket(req)).expectError(BusinessException.class).verify();
+		bookingReq.setPassengers(List.of(passengerReq1, passengerReq2));
+		StepVerifier.create(service.bookTicket(bookingReq)).expectError(BusinessException.class).verify();
 	}
 
 	@Test
 	void testBookTicket_UserNotFound() {
 		BookingRequest req = makeValidReq();
-
 		when(userClient.getUserById("U1")).thenReturn(Mono.error(new NotFoundException("User not found")));
 		when(flightClient.getFlightById("F1")).thenReturn(Mono.just(new FlightDto()));
-
 		StepVerifier.create(service.bookTicket(req)).expectError(NotFoundException.class).verify();
 	}
 
 	@Test
 	void testBookTicket_FlightNotFound() {
 		BookingRequest req = makeValidReq();
-
 		when(userClient.getUserById("U1")).thenReturn(Mono.just(new UserDto()));
 		when(flightClient.getFlightById("F1")).thenReturn(Mono.error(new NotFoundException("Flight not found")));
-
 		StepVerifier.create(service.bookTicket(req)).expectError(NotFoundException.class).verify();
 	}
 
 	@Test
 	void testBookTicket_NotEnoughSeats() {
-
 		BookingRequest req = makeValidReq();
-
 		UserDto user = new UserDto();
 		user.setId("U1");
 
 		FlightDto flight = new FlightDto();
 		flight.setId("F1");
-		flight.setTotalSeats(1); // only 1 seat total
-
+		flight.setTotalSeats(1);
 		Booking existing = new Booking();
-		existing.setSeatsBooked(1); // already 1 booked
-
+		existing.setSeatsBooked(1);
 		when(userClient.getUserById("U1")).thenReturn(Mono.just(user));
 		when(flightClient.getFlightById("F1")).thenReturn(Mono.just(flight));
 		when(bookingRepo.findByFlightId("F1")).thenReturn(Flux.just(existing));
@@ -173,64 +160,53 @@ public class BookingServiceImplTest {
 
 	@Test
 	void testGetTicket_Success() {
-		Booking b = new Booking();
-		b.setPnr("PNR123");
+		Booking booking = new Booking();
+		booking.setPnr("PNR123");
 
-		when(bookingRepo.findByPnr("PNR123")).thenReturn(Mono.just(b));
-
-		StepVerifier.create(service.getTicket("PNR123")).expectNext(b).verifyComplete();
+		when(bookingRepo.findByPnr("PNR123")).thenReturn(Mono.just(booking));
+		StepVerifier.create(service.getTicket("PNR123")).expectNext(booking).verifyComplete();
 	}
 
 	@Test
 	void testGetTicket_NotFound() {
-
 		when(bookingRepo.findByPnr("PNR123")).thenReturn(Mono.empty());
-
 		StepVerifier.create(service.getTicket("PNR123")).expectError(NotFoundException.class).verify();
 	}
 
 	@Test
 	void testHistoryByUserId_Success() {
-		Booking b = new Booking();
-		b.setUserId("U1");
+		Booking booking = new Booking();
+		booking.setUserId("U1");
 
-		when(bookingRepo.findByUserId("U1")).thenReturn(Flux.just(b));
-
-		StepVerifier.create(service.getBookingHistoryByUserId("U1")).expectNext(b).verifyComplete();
+		when(bookingRepo.findByUserId("U1")).thenReturn(Flux.just(booking));
+		StepVerifier.create(service.getBookingHistoryByUserId("U1")).expectNext(booking).verifyComplete();
 	}
 
 	@Test
 	void testHistoryByEmail_UserIdNull() {
-
-		UserDto u = new UserDto(); // id null
-		when(userClient.getUserByEmail("e@mail.com")).thenReturn(Mono.just(u));
-
+		UserDto user = new UserDto();
+		when(userClient.getUserByEmail("e@mail.com")).thenReturn(Mono.just(user));
 		StepVerifier.create(service.getBookingHistoryByEmail("e@mail.com")).expectError(NotFoundException.class)
 				.verify();
 	}
 
 	@Test
 	void testHistoryByEmail_Success() {
+		UserDto user = new UserDto();
+		user.setId("U1");
+		Booking booking = new Booking();
+		booking.setUserId("U1");
 
-		UserDto u = new UserDto();
-		u.setId("U1");
-
-		Booking b = new Booking();
-		b.setUserId("U1");
-
-		when(userClient.getUserByEmail("e@mail.com")).thenReturn(Mono.just(u));
-		when(bookingRepo.findByUserId("U1")).thenReturn(Flux.just(b));
-
-		StepVerifier.create(service.getBookingHistoryByEmail("e@mail.com")).expectNext(b).verifyComplete();
+		when(userClient.getUserByEmail("e@mail.com")).thenReturn(Mono.just(user));
+		when(bookingRepo.findByUserId("U1")).thenReturn(Flux.just(booking));
+		StepVerifier.create(service.getBookingHistoryByEmail("e@mail.com")).expectNext(booking).verifyComplete();
 	}
 
 	@Test
 	void testCancelBooking_Success() {
-
 		Booking booking = new Booking();
 		booking.setId("B1");
 		booking.setFlightId("F1");
-
 		FlightDto flight = new FlightDto();
 		flight.setDepartureTime(LocalDateTime.now().plusDays(3));
 
@@ -238,64 +214,55 @@ public class BookingServiceImplTest {
 		when(flightClient.getFlightById("F1")).thenReturn(Mono.just(flight));
 		when(passengerRepo.findByBookingId("B1")).thenReturn(Flux.empty());
 		when(bookingRepo.delete(booking)).thenReturn(Mono.empty());
-
 		StepVerifier.create(service.cancelBooking("PNR")).verifyComplete();
 	}
 
 	@Test
 	void testCancelBooking_TooLate() {
-
 		Booking booking = new Booking();
 		booking.setId("B1");
 		booking.setFlightId("F1");
-
 		FlightDto flight = new FlightDto();
 		flight.setDepartureTime(LocalDateTime.now().plusHours(5));
 
 		when(bookingRepo.findByPnr("PNR")).thenReturn(Mono.just(booking));
 		when(flightClient.getFlightById("F1")).thenReturn(Mono.just(flight));
-
 		StepVerifier.create(service.cancelBooking("PNR")).expectError(BusinessException.class).verify();
 	}
 
 	@Test
 	void testCancelBooking_InvalidPNR() {
-
 		when(bookingRepo.findByPnr("BAD")).thenReturn(Mono.empty());
-
 		StepVerifier.create(service.cancelBooking("BAD")).expectError(NotFoundException.class).verify();
 	}
 
 	@Test
 	void testCheckSeatConflict_NoConflict() {
 
-		BookingRequest req = makeValidReq(); // seat A1
-
+		BookingRequest req = makeValidReq();
 		UserDto user = new UserDto();
 		user.setId("U1");
 
 		FlightDto flight = new FlightDto();
 		flight.setId("F1");
-		flight.setTotalSeats(100); // IMPORTANT: plenty of seats
+		flight.setTotalSeats(100);
 
 		when(userClient.getUserById("U1")).thenReturn(Mono.just(user));
 		when(flightClient.getFlightById("F1")).thenReturn(Mono.just(flight));
+
 		Booking existing = new Booking();
 		existing.setId("B1");
-		existing.setSeatsBooked(1); // booked 1, still many seats left
-
-		Passenger p = new Passenger();
-		p.setSeatNumber("B2"); // different seat → NO conflict
+		existing.setSeatsBooked(1);
+		Passenger passenger = new Passenger();
+		passenger.setSeatNumber("B2");
 
 		when(bookingRepo.findByFlightId("F1")).thenReturn(Flux.just(existing));
-
-		when(passengerRepo.findByBookingId("B1")).thenReturn(Flux.just(p));
+		when(passengerRepo.findByBookingId("B1")).thenReturn(Flux.just(passenger));
 
 		Booking saved = new Booking();
 		saved.setId("BID");
 		saved.setPnr("PNR123");
 		when(bookingRepo.save(any())).thenReturn(Mono.just(saved));
-
 		Passenger savedPassenger = new Passenger();
 		savedPassenger.setId("P1");
 		when(passengerRepo.save(any())).thenReturn(Mono.just(savedPassenger));

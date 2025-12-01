@@ -5,21 +5,21 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class PassengerTest {
 
-    @Test
-    void testPassengerGettersSetters() {
-        Passenger p = new Passenger();
-        p.setId("P1");
-        p.setName("John");
-        p.setGender(GENDER.M);
-        p.setAge(25);
-        p.setSeatNumber("A10");
-        p.setBookingId("B1");
+	@Test
+	void testPassengerGettersSetters() {
+		Passenger ppassenger = new Passenger();
+		ppassenger.setId("P1");
+		ppassenger.setName("abc");
+		ppassenger.setGender(GENDER.M);
+		ppassenger.setAge(25);
+		ppassenger.setSeatNumber("A10");
+		ppassenger.setBookingId("B1");
 
-        assertEquals("P1", p.getId());
-        assertEquals("John", p.getName());
-        assertEquals(GENDER.M, p.getGender());
-        assertEquals(25, p.getAge());
-        assertEquals("A10", p.getSeatNumber());
-        assertEquals("B1", p.getBookingId());
-    }
+		assertEquals("P1", ppassenger.getId());
+		assertEquals("abc", ppassenger.getName());
+		assertEquals(GENDER.M, ppassenger.getGender());
+		assertEquals(25, ppassenger.getAge());
+		assertEquals("A10", ppassenger.getSeatNumber());
+		assertEquals("B1", ppassenger.getBookingId());
+	}
 }

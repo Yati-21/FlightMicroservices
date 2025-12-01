@@ -24,85 +24,62 @@ import reactor.core.publisher.Mono;
 @WebFluxTest(controllers = BookingController.class)
 public class BookingControllerTest {
 
-    @Autowired
-    private WebTestClient webTestClient;
+	@Autowired
+	private WebTestClient webTestClient;
 
-    @MockitoBean
-    private BookingService bookingService;
+	@MockitoBean
+	private BookingService bookingService;
 
+	@Test
+	void testCreateBooking() {
 
-    @Test
-    void testCreateBooking() {
+		BookingRequest bookingReq = new BookingRequest();
+		bookingReq.setFlightId("F100");
+		bookingReq.setUserId("U200");
+		bookingReq.setSeatsBooked(1);
+		bookingReq.setMealType(MEAL_TYPE.VEG);
+		bookingReq.setFlightType(FLIGHT_TYPE.ONE_WAY);
 
-        BookingRequest req = new BookingRequest();
-        req.setFlightId("F100");
-        req.setUserId("U200");
-        req.setSeatsBooked(1);
-        req.setMealType(MEAL_TYPE.VEG);
-        req.setFlightType(FLIGHT_TYPE.ONE_WAY);
+		PassengerRequest passengerReq1 = new PassengerRequest();
+		passengerReq1.setName("abc");
+		passengerReq1.setAge(25);
+		passengerReq1.setGender(GENDER.M);
+		passengerReq1.setSeatNumber("A1");
 
-        PassengerRequest p1 = new PassengerRequest();
-        p1.setName("John");
-        p1.setAge(25);
-        p1.setGender(GENDER.M);
-        p1.setSeatNumber("A1");
+		bookingReq.setPassengers(List.of(passengerReq1));
 
-        req.setPassengers(List.of(p1));
+		Mockito.when(bookingService.bookTicket(Mockito.any())).thenReturn(Mono.just("PNR123"));
 
-        Mockito.when(bookingService.bookTicket(Mockito.any()))
-                .thenReturn(Mono.just("PNR123"));
+		webTestClient.post().uri("/bookings/create").contentType(MediaType.APPLICATION_JSON).bodyValue(bookingReq)
+				.exchange().expectStatus().isCreated().expectBody(String.class).isEqualTo("PNR123");
+	}
 
-        webTestClient.post()
-                .uri("/bookings/create")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(req)
-                .exchange()
-                .expectStatus().isCreated()
-                .expectBody(String.class)
-                .isEqualTo("PNR123");
-    }
+	@Test
+	void testGetBooking() {
+		Booking booking = new Booking();
+		booking.setPnr("PNR123");
 
+		Mockito.when(bookingService.getTicket("PNR123")).thenReturn(Mono.just(booking));
 
-    @Test
-    void testGetBooking() {
-        Booking b = new Booking();
-        b.setPnr("PNR123");
+		webTestClient.get().uri("/bookings/get/PNR123").exchange().expectStatus().isOk().expectBody().jsonPath("$.pnr")
+				.isEqualTo("PNR123");
+	}
 
-        Mockito.when(bookingService.getTicket("PNR123"))
-                .thenReturn(Mono.just(b));
+	@Test
+	void testCancelBooking() {
+		Mockito.when(bookingService.cancelBooking("PNR123")).thenReturn(Mono.empty());
 
-        webTestClient.get()
-                .uri("/bookings/get/PNR123")
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody()
-                .jsonPath("$.pnr").isEqualTo("PNR123");
-    }
+		webTestClient.delete().uri("/bookings/cancel/PNR123").exchange().expectStatus().isOk();
+	}
 
-    @Test
-    void testCancelBooking() {
-        Mockito.when(bookingService.cancelBooking("PNR123"))
-                .thenReturn(Mono.empty());
+	@Test
+	void testHistoryByUser() {
+		Booking booking = new Booking();
+		booking.setUserId("U1");
 
-        webTestClient.delete()
-                .uri("/bookings/cancel/PNR123")
-                .exchange()
-                .expectStatus().isOk();
-    }
+		Mockito.when(bookingService.getBookingHistoryByUserId("U1")).thenReturn(Flux.just(booking));
 
-    @Test
-    void testHistoryByUser() {
-        Booking b = new Booking();
-        b.setUserId("U1");
-
-        Mockito.when(bookingService.getBookingHistoryByUserId("U1"))
-                .thenReturn(Flux.just(b));
-
-        webTestClient.get()
-                .uri("/bookings/history/user/U1")
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody()
-                .jsonPath("$[0].userId").isEqualTo("U1");
-    }
+		webTestClient.get().uri("/bookings/history/user/U1").exchange().expectStatus().isOk().expectBody()
+				.jsonPath("$[0].userId").isEqualTo("U1");
+	}
 }

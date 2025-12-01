@@ -10,8 +10,8 @@ class ApiGatewayApplicationTests {
 
 	@Test
 	void contextLoads() {
-		// Spring Boot test auto-fails if context fails to load
-        assertTrue(true);
+		// spring boot test auto-fails if context fails to load
+		assertTrue(true);
 	}
 
 }

@@ -7,10 +7,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 @Configuration
 public class WebClientConfig {
-
-    @Bean
-    @LoadBalanced   // allows http://user-service, http://flight-service
-    public WebClient.Builder loadBalancedWebClientBuilder() {
-        return WebClient.builder();
-    }
+	@Bean
+	@LoadBalanced
+	public WebClient.Builder loadBalancedWebClientBuilder() {
+		return WebClient.builder();
+	}
 }

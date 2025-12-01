@@ -10,15 +10,15 @@ import lombok.Data;
 @Data
 public class FlightDto {
 
-    private String id;
-    private String airlineCode;
-    private String flightNumber;
-    private AIRPORT_CODE fromCity;
-    private AIRPORT_CODE toCity;
-    private LocalDateTime departureTime;
-    private LocalDateTime arrivalTime;
-    private int totalSeats;
-    private int availableSeats;
-    private float price;
-    private FLIGHT_STATUS status;
+	private String id;
+	private String airlineCode;
+	private String flightNumber;
+	private AIRPORT_CODE fromCity;
+	private AIRPORT_CODE toCity;
+	private LocalDateTime departureTime;
+	private LocalDateTime arrivalTime;
+	private int totalSeats;
+	private int availableSeats;
+	private float price;
+	private FLIGHT_STATUS status;
 }
