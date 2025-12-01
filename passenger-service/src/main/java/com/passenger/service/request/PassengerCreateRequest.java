@@ -4,6 +4,8 @@ import com.passenger.service.entity.GENDER;
 
 import jakarta.validation.constraints.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 @Data
 public class PassengerCreateRequest {

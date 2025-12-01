@@ -1,23 +1,15 @@
 package com.flight.service.controller;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-
-import com.flight.service.entity.AIRPORT_CODE;
-import com.flight.service.entity.FLIGHT_STATUS;
-import com.flight.service.entity.Flight;
-import com.flight.service.exception.GlobalErrorHandler;
+import com.flight.service.entity.*;
+import com.flight.service.request.FlightSearchRequest;
 import com.flight.service.service.FlightService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -25,8 +17,10 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 @WebFluxTest(controllers = FlightController.class)
-@Import(GlobalErrorHandler.class)
 class FlightControllerTest {
 
     @Autowired
@@ -35,75 +29,103 @@ class FlightControllerTest {
     @MockitoBean
     private FlightService flightService;
 
-    private Flight testFlight;
+    private Flight flight;
 
     @BeforeEach
     void setup() {
-        testFlight = new Flight();
-        testFlight.setId("F1");
-        testFlight.setAirlineCode("AI");
-        testFlight.setFlightNumber("AI100");
-        testFlight.setFromCity(AIRPORT_CODE.DEL);
-        testFlight.setToCity(AIRPORT_CODE.BOM);
-        testFlight.setDepartureTime(LocalDateTime.now().plusDays(1));
-        testFlight.setArrivalTime(LocalDateTime.now().plusDays(1).plusHours(2));
-        testFlight.setTotalSeats(100);
-        testFlight.setAvailableSeats(100);
-        testFlight.setPrice(5000);
-        testFlight.setStatus(FLIGHT_STATUS.SCHEDULED);
+        flight = new Flight();
+        flight.setId("F1");
+        flight.setAirlineCode("AI");
+        flight.setFlightNumber("AI101");
+        flight.setFromCity(AIRPORT_CODE.DEL);
+        flight.setToCity(AIRPORT_CODE.BOM);
+        flight.setDepartureTime(LocalDateTime.now().plusDays(1));
+        flight.setArrivalTime(LocalDateTime.now().plusDays(1).plusHours(2));
+        flight.setTotalSeats(180);
+        flight.setAvailableSeats(180);
+        flight.setPrice(5500);
+        flight.setStatus(FLIGHT_STATUS.SCHEDULED);
     }
+
+    // =====================================================================
+    //                      ADD FLIGHT
+    // =====================================================================
 
     @Test
     void addFlight_success() {
-        when(flightService.addFlight(any(Flight.class))).thenReturn(Mono.just(testFlight));
+        Mockito.when(flightService.addFlight(Mockito.any()))
+                .thenReturn(Mono.just(flight));
 
         webTestClient.post()
                 .uri("/flights/add")
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(testFlight)
+                .bodyValue(flight)
                 .exchange()
                 .expectStatus().isCreated()
-                .expectBody(String.class).isEqualTo("F1");
+                .expectBody(String.class)
+                .isEqualTo("F1");
     }
+
+    // =====================================================================
+    //                      SEARCH FLIGHTS
+    // =====================================================================
+
+    @Test
+    void searchFlights_success() {
+
+        FlightSearchRequest req = new FlightSearchRequest();
+        req.setFromCity(AIRPORT_CODE.DEL);
+        req.setToCity(AIRPORT_CODE.BOM);
+        req.setDate(LocalDate.now().plusDays(1));
+
+        Mockito.when(flightService.searchFlights(
+                AIRPORT_CODE.DEL, AIRPORT_CODE.BOM, req.getDate()))
+                .thenReturn(Flux.just(flight));
+
+        webTestClient.post()
+                .uri("/flights/search")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(req)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$[0].id").isEqualTo("F1")
+                .jsonPath("$[0].airlineCode").isEqualTo("AI")
+                .jsonPath("$[0].fromCity").isEqualTo("DEL")
+                .jsonPath("$[0].toCity").isEqualTo("BOM");
+    }
+
+    // =====================================================================
+    //                      GET FLIGHT BY ID
+    // =====================================================================
 
     @Test
     void getFlight_success() {
-        when(flightService.getFlightById("F1")).thenReturn(Mono.just(testFlight));
+        Mockito.when(flightService.getFlightById("F1"))
+                .thenReturn(Mono.just(flight));
 
         webTestClient.get()
                 .uri("/flights/get/F1")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$.flightNumber").isEqualTo("AI100");
+                .jsonPath("$.id").isEqualTo("F1");
     }
 
-    @Test
-    void searchFlights_success() {
-        when(flightService.searchFlights(AIRPORT_CODE.DEL, AIRPORT_CODE.BOM, LocalDate.of(2030,1,1)))
-                .thenReturn(Flux.just(testFlight));
-
-        webTestClient.get()
-                .uri(uriBuilder -> uriBuilder.path("/flights/search")
-                        .queryParam("from", "DEL")
-                        .queryParam("to", "BOM")
-                        .queryParam("date", "2030-01-01")
-                        .build())
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody()
-                .jsonPath("$[0].id").isEqualTo("F1");
-    }
+    // =====================================================================
+    //                      GET FLIGHTS BY AIRLINE
+    // =====================================================================
 
     @Test
     void getFlightsByAirline_success() {
-        when(flightService.getFlightsByAirline("AI")).thenReturn(Flux.just(testFlight));
+        Mockito.when(flightService.getFlightsByAirline("AI"))
+                .thenReturn(Flux.just(flight));
 
         webTestClient.get()
                 .uri("/flights/airline/AI")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$[0].id").isEqualTo("F1");
+                .jsonPath("$[0].flightNumber").isEqualTo("AI101");
     }
 }

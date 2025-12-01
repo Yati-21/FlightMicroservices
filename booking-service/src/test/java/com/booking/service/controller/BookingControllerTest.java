@@ -1,8 +1,18 @@
 package com.booking.service.controller;
 
 import com.booking.service.entity.Booking;
+import com.booking.service.entity.FLIGHT_TYPE;
+import com.booking.service.entity.GENDER;
+import com.booking.service.entity.MEAL_TYPE;
 import com.booking.service.request.BookingRequest;
+import com.booking.service.request.PassengerRequest;
 import com.booking.service.service.BookingService;
+
+import ch.qos.logback.core.net.server.Client;
+
+import static org.mockito.ArgumentMatchers.any;
+
+import java.util.List;
 
 import org.junit.jupiter.api.*;
 import org.mockito.Mockito;
@@ -14,7 +24,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.*;
 
 @WebFluxTest(controllers = BookingController.class)
-public class BookingControllerTest {
+class BookingControllerTest {
 
     @Autowired
     private WebTestClient webTestClient;
@@ -22,16 +32,33 @@ public class BookingControllerTest {
     @MockitoBean
     private BookingService bookingService;
 
+    private BookingRequest validReq;
+
+    @BeforeEach
+    void setup() {
+        PassengerRequest p = new PassengerRequest();
+        p.setName("John");
+        p.setGender(GENDER.M);
+        p.setAge(30);
+        p.setSeatNumber("A1");
+
+        validReq = new BookingRequest();
+        validReq.setFlightId("F1");
+        validReq.setUserId("U1");
+        validReq.setSeatsBooked(1);
+        validReq.setMealType(MEAL_TYPE.VEG);
+        validReq.setFlightType(FLIGHT_TYPE.ONE_WAY);
+        validReq.setPassengers(List.of(p));
+    }
+
     @Test
     void testCreateBooking() {
-        BookingRequest req = new BookingRequest();
-
         Mockito.when(bookingService.bookTicket(Mockito.any()))
                 .thenReturn(Mono.just("PNR123"));
 
         webTestClient.post()
                 .uri("/bookings/create")
-                .bodyValue(req)
+                .bodyValue(validReq)
                 .exchange()
                 .expectStatus().isCreated()
                 .expectBody(String.class)
@@ -49,7 +76,9 @@ public class BookingControllerTest {
         webTestClient.get()
                 .uri("/bookings/get/PNR1")
                 .exchange()
-                .expectStatus().isOk();
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.pnr").isEqualTo("PNR1");
     }
 
     @Test
@@ -63,3 +92,4 @@ public class BookingControllerTest {
                 .expectStatus().isOk();
     }
 }
+

@@ -9,24 +9,27 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @WebFluxTest(UserController.class)
-public class UserControllerTest {
+class UserControllerTest {
+
+    @Autowired
+    private WebTestClient client;
 
     @MockitoBean
     private UserService service;
 
-    private WebTestClient client;
-
-    @BeforeEach
-    void setup(WebTestClient client) {
-        this.client = client;
-    }
+    // =====================================================================
+    //                        CREATE USER
+    // =====================================================================
 
     @Test
     void testCreateUser() {
@@ -36,9 +39,11 @@ public class UserControllerTest {
 
         User saved = new User("1", "Jay", "jay@mail.com");
 
-        Mockito.when(service.createUser(Mockito.any())).thenReturn(Mono.just(saved));
+        Mockito.when(service.createUser(Mockito.any()))
+                .thenReturn(Mono.just(saved));
 
         client.post().uri("/users")
+                .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(req)
                 .exchange()
                 .expectStatus().isCreated()
@@ -46,6 +51,10 @@ public class UserControllerTest {
                 .jsonPath("$.id").isEqualTo("1")
                 .jsonPath("$.name").isEqualTo("Jay");
     }
+
+    // =====================================================================
+    //                        GET USER
+    // =====================================================================
 
     @Test
     void testGetUser() {
@@ -60,11 +69,16 @@ public class UserControllerTest {
                 .jsonPath("$.name").isEqualTo("Jay");
     }
 
+    // =====================================================================
+    //                        GET BY EMAIL
+    // =====================================================================
+
     @Test
     void testGetByEmail() {
         User user = new User("1", "Jay", "jay@mail.com");
 
-        Mockito.when(service.getByEmail("jay@mail.com")).thenReturn(Mono.just(user));
+        Mockito.when(service.getByEmail("jay@mail.com"))
+                .thenReturn(Mono.just(user));
 
         client.get().uri("/users/email/jay@mail.com")
                 .exchange()
@@ -72,6 +86,10 @@ public class UserControllerTest {
                 .expectBody()
                 .jsonPath("$.id").isEqualTo("1");
     }
+
+    // =====================================================================
+    //                        UPDATE USER
+    // =====================================================================
 
     @Test
     void testUpdateUser() {
@@ -85,6 +103,7 @@ public class UserControllerTest {
                 .thenReturn(Mono.just(updated));
 
         client.put().uri("/users/1")
+                .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(req)
                 .exchange()
                 .expectStatus().isOk()
@@ -92,14 +111,23 @@ public class UserControllerTest {
                 .jsonPath("$.name").isEqualTo("New");
     }
 
+    // =====================================================================
+    //                        DELETE USER
+    // =====================================================================
+
     @Test
     void testDeleteUser() {
-        Mockito.when(service.deleteUser("1")).thenReturn(Mono.empty());
+        Mockito.when(service.deleteUser("1"))
+                .thenReturn(Mono.empty());
 
         client.delete().uri("/users/1")
                 .exchange()
                 .expectStatus().isOk();
     }
+
+    // =====================================================================
+    //                        GET ALL USERS
+    // =====================================================================
 
     @Test
     void testGetAllUsers() {
@@ -113,6 +141,7 @@ public class UserControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$[0].name").isEqualTo("Jay");
+                .jsonPath("$[0].name").isEqualTo("Jay")
+                .jsonPath("$[1].name").isEqualTo("Riya");
     }
 }

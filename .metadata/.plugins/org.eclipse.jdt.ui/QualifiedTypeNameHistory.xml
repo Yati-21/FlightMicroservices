@@ -3,10 +3,8 @@
     <fullyQualifiedTypeName name="org.springframework.cloud.netflix.eureka.server.EnableEurekaServer"/>
     <fullyQualifiedTypeName name="org.springframework.cloud.config.server.EnableConfigServer"/>
     <fullyQualifiedTypeName name="org.springframework.cloud.client.discovery.EnableDiscoveryClient"/>
-    <fullyQualifiedTypeName name="lombok.Getter"/>
     <fullyQualifiedTypeName name="com.booking.service.dto.UserDto"/>
     <fullyQualifiedTypeName name="com.booking.service.dto.FlightDto"/>
-    <fullyQualifiedTypeName name="java.util.List"/>
     <fullyQualifiedTypeName name="com.booking.service.dto.PassengerDto"/>
     <fullyQualifiedTypeName name="com.booking.service.dto.PassengerCreateRequest"/>
     <fullyQualifiedTypeName name="java.lang.Override"/>
@@ -22,6 +20,15 @@
     <fullyQualifiedTypeName name="reactor.core.scheduler.Schedulers"/>
     <fullyQualifiedTypeName name="io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker"/>
     <fullyQualifiedTypeName name="com.flight.service.client.AirlineClient"/>
-    <fullyQualifiedTypeName name="org.springframework.boot.webflux.test.autoconfigure.WebFluxTest"/>
     <fullyQualifiedTypeName name="org.springframework.test.context.bean.override.mockito.MockitoBean"/>
+    <fullyQualifiedTypeName name="com.booking.service.request.PassengerRequest"/>
+    <fullyQualifiedTypeName name="com.booking.service.entity.GENDER"/>
+    <fullyQualifiedTypeName name="java.util.List"/>
+    <fullyQualifiedTypeName name="com.booking.service.entity.MEAL_TYPE"/>
+    <fullyQualifiedTypeName name="com.booking.service.entity.FLIGHT_TYPE"/>
+    <fullyQualifiedTypeName name="ch.qos.logback.core.net.server.Client"/>
+    <fullyQualifiedTypeName name="com.flight.service.request.FlightSearchRequest"/>
+    <fullyQualifiedTypeName name="org.springframework.boot.webflux.test.autoconfigure.WebFluxTest"/>
+    <fullyQualifiedTypeName name="lombok.Getter"/>
+    <fullyQualifiedTypeName name="lombok.Setter"/>
 </qualifiedTypeNameHistroy>
