@@ -21,11 +21,11 @@ public class PassengerController {
         this.service = service;
     }
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public Mono<String> createPassenger(@RequestBody @Valid PassengerCreateRequest req) {
-        return service.createPassenger(req);
-    }
+//    @PostMapping
+//    @ResponseStatus(HttpStatus.CREATED)
+//    public Mono<String> createPassenger(@RequestBody @Valid PassengerCreateRequest req) {
+//        return service.createPassenger(req);
+//    }
 
     @GetMapping("/booking/{bookingId}")
     public Flux<Passenger> getPassengersByBooking(@PathVariable String bookingId) {

@@ -1,0 +1,1674 @@
+{
+  "info": {
+    "name": "Flight Microservices – Full Test Suite",
+    "_postman_id": "11111111-2222-3333-4444-555555555555",
+    "description": "Comprehensive tests for airline-service, user-service, flight-service, booking-service, passenger-service, and API Gateway.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Airline Service (9001)",
+      "item": [
+        {
+          "name": "Create Airline - Valid",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{airline_base}}/airlines"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"AI\",\n  \"name\": \"Air India\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Has code & name\", function () {",
+                  "  pm.expect(json.code).to.eql(\"AI\");",
+                  "  pm.expect(json.name).to.eql(\"Air India\");",
+                  "});",
+                  "pm.environment.set(\"airlineCode\", json.code);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Airline - Missing Name (Invalid)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{airline_base}}/airlines"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"XX\",\n  \"name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", function () { pm.response.to.have.status(400); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Validation failed\", function () {",
+                  "  pm.expect(json.message).to.eql(\"Validation failed\");",
+                  "  pm.expect(json.errors).to.have.property(\"name\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Airline - By Code (Valid)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{airline_base}}/airlines/{{airlineCode}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Code matches env\", function () {",
+                  "  pm.expect(json.code).to.eql(pm.environment.get(\"airlineCode\"));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Airline - Not Found",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{airline_base}}/airlines/INVALID"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", function () { pm.response.to.have.status(404); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Error message present\", function () {",
+                  "  pm.expect(json.error).to.match(/not found/i);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Airlines",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{airline_base}}/airlines"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Array response\", function () {",
+                  "  pm.expect(json).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Airline - Valid",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{airline_base}}/airlines/{{airlineCode}}"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Air India Updated\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Name updated\", function () {",
+                  "  pm.expect(json.name).to.eql(\"Air India Updated\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Airline - Empty Name (Invalid)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{airline_base}}/airlines/{{airlineCode}}"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", function () { pm.response.to.have.status(400); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Validation failed for name\", function () {",
+                  "  pm.expect(json.message).to.eql(\"Validation failed\");",
+                  "  pm.expect(json.errors).to.have.property(\"name\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Airline - Valid",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{airline_base}}/airlines/{{airlineCode}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Airline - Not Found",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{airline_base}}/airlines/NON_EXISTENT"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", function () { pm.response.to.have.status(404); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Not found error\", function () {",
+                  "  pm.expect(json.error).to.match(/not found/i);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "User Service (9002)",
+      "item": [
+        {
+          "name": "Create User - Valid",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{user_base}}/users"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Riya\",\n  \"email\": \"riya@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"User created\", function () {",
+                  "  pm.expect(json).to.have.property(\"id\");",
+                  "  pm.expect(json.name).to.eql(\"Riya\");",
+                  "});",
+                  "pm.environment.set(\"userId\", json.id);",
+                  "pm.environment.set(\"userEmail\", json.email);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create User - Invalid Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{user_base}}/users"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bad User\",\n  \"email\": \"not-an-email\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", function () { pm.response.to.have.status(400); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Validation error email\", function () {",
+                  "  pm.expect(json.errors).to.have.property(\"email\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get User - By Id (Valid)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{user_base}}/users/{{userId}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"User id matches\", function () {",
+                  "  pm.expect(json.id).to.eql(pm.environment.get(\"userId\"));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get User - Not Found",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{user_base}}/users/unknown-id"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", function () { pm.response.to.have.status(404); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"User not found\", function () {",
+                  "  pm.expect(json.error).to.match(/user not found/i);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get User - By Email (Valid)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{user_base}}/users/email/{{userEmail}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Email matches\", function () {",
+                  "  pm.expect(json.email).to.eql(pm.environment.get(\"userEmail\"));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get User - By Email Not Found",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{user_base}}/users/email/unknown@example.com"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", function () { pm.response.to.have.status(404); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"User not found by email\", function () {",
+                  "  pm.expect(json.error).to.match(/not found with email/i);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update User - Valid",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{user_base}}/users/{{userId}}"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Riya Updated\",\n  \"email\": \"riya.updated@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"User updated\", function () {",
+                  "  pm.expect(json.name).to.eql(\"Riya Updated\");",
+                  "  pm.expect(json.email).to.eql(\"riya.updated@example.com\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update User - Invalid Email",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{user_base}}/users/{{userId}}"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Riya Again\",\n  \"email\": \"bad-email\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", function () { pm.response.to.have.status(400); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Email validation error\", function () {",
+                  "  pm.expect(json.errors).to.have.property(\"email\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{user_base}}/users"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Array of users\", function () {",
+                  "  pm.expect(json).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete User - Valid",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{user_base}}/users/{{userId}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete User - Not Found",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{user_base}}/users/nonexistent"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Flight Service (9003)",
+      "item": [
+        {
+          "name": "Add Flight - Valid",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{flight_base}}/flights/add"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"airlineCode\": \"AI\",\n  \"flightNumber\": \"AI101\",\n  \"fromCity\": \"DEL\",\n  \"toCity\": \"BOM\",\n  \"departureTime\": \"2030-01-01T10:00:00\",\n  \"arrivalTime\": \"2030-01-01T12:00:00\",\n  \"totalSeats\": 180,\n  \"availableSeats\": 0,\n  \"price\": 5000,\n  \"status\": \"SCHEDULED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Flight created with id\", function () {",
+                  "  pm.expect(json).to.have.property(\"id\");",
+                  "  pm.expect(json.availableSeats).to.eql(json.totalSeats);",
+                  "});",
+                  "pm.environment.set(\"flightId\", json.id);",
+                  "pm.environment.set(\"airlineCode\", json.airlineCode);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add Flight - Same Source/Destination (Business Error)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{flight_base}}/flights/add"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"airlineCode\": \"AI\",\n  \"flightNumber\": \"AI102\",\n  \"fromCity\": \"DEL\",\n  \"toCity\": \"DEL\",\n  \"departureTime\": \"2030-01-01T10:00:00\",\n  \"arrivalTime\": \"2030-01-01T12:00:00\",\n  \"totalSeats\": 100,\n  \"availableSeats\": 0,\n  \"price\": 4000,\n  \"status\": \"SCHEDULED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", function () { pm.response.to.have.status(400); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Business error message\", function () {",
+                  "  pm.expect(json.error).to.match(/source and destination must be different/i);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add Flight - Missing AirlineCode (Validation Error)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{flight_base}}/flights/add"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"flightNumber\": \"AI103\",\n  \"fromCity\": \"DEL\",\n  \"toCity\": \"BOM\",\n  \"departureTime\": \"2030-01-01T10:00:00\",\n  \"arrivalTime\": \"2030-01-01T12:00:00\",\n  \"totalSeats\": 100,\n  \"availableSeats\": 0,\n  \"price\": 4000,\n  \"status\": \"SCHEDULED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", function () { pm.response.to.have.status(400); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Validation errors airlineCode\", function () {",
+                  "  pm.expect(json.message).to.eql(\"Validation failed\");",
+                  "  pm.expect(json.errors).to.have.property(\"airlineCode\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Search Flights - Valid",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{flight_base}}/flights/search"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromCity\": \"DEL\",\n  \"toCity\": \"BOM\",\n  \"date\": \"2030-01-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Array of flights\", function () {",
+                  "  pm.expect(json).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Search Flights - Missing Date (Validation Error)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{flight_base}}/flights/search"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromCity\": \"DEL\",\n  \"toCity\": \"BOM\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", function () { pm.response.to.have.status(400); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Validation error date\", function () {",
+                  "  pm.expect(json.message).to.eql(\"Validation failed\");",
+                  "  pm.expect(json.errors).to.have.property(\"date\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Flight By Id - Valid",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{flight_base}}/flights/get/{{flightId}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Flight id matches\", function () {",
+                  "  pm.expect(json.id).to.eql(pm.environment.get(\"flightId\"));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Flight By Id - Not Found",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{flight_base}}/flights/get/BADID"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", function () { pm.response.to.have.status(404); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Flight not found\", function () {",
+                  "  pm.expect(json.error).to.match(/flight not found/i);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Flights By Airline Code",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{flight_base}}/flights/airline/AI"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Array of flights\", function () {",
+                  "  pm.expect(json).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Passenger Service (9005)",
+      "item": [
+        {
+          "name": "Create Passenger - Valid (Standalone)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{passenger_base}}/passengers"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Aman\",\n  \"gender\": \"M\",\n  \"age\": 25,\n  \"seatNumber\": \"A1\",\n  \"bookingId\": \"B1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
+                  "const id = pm.response.text();",
+                  "pm.test(\"Passenger id returned\", function () {",
+                  "  pm.expect(id).to.be.a(\"string\");",
+                  "});",
+                  "pm.environment.set(\"passengerId\", id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Passenger - Invalid Seat Format",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{passenger_base}}/passengers"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Aman\",\n  \"gender\": \"M\",\n  \"age\": 25,\n  \"seatNumber\": \"seat1\",\n  \"bookingId\": \"B1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", function () { pm.response.to.have.status(400); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Seat validation error\", function () {",
+                  "  pm.expect(json.message).to.eql(\"Validation failed\");",
+                  "  pm.expect(json.errors).to.have.property(\"seatNumber\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Passengers By BookingId",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{passenger_base}}/passengers/booking/B1"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Array of passengers\", function () {",
+                  "  pm.expect(json).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Passengers By BookingId",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{passenger_base}}/passengers/booking/B1"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Booking Service (9004)",
+      "item": [
+        {
+          "name": "Create Booking - Valid",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{booking_base}}/bookings/create"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"flightId\": \"{{flightId}}\",\n  \"userId\": \"{{userId}}\",\n  \"seatsBooked\": 1,\n  \"mealType\": \"VEG\",\n  \"flightType\": \"ONE_WAY\",\n  \"passengers\": [\n    {\n      \"name\": \"John Doe\",\n      \"gender\": \"M\",\n      \"age\": 30,\n      \"seatNumber\": \"A1\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
+                  "const pnr = pm.response.text();",
+                  "pm.test(\"PNR returned\", function () {",
+                  "  pm.expect(pnr).to.be.a(\"string\");",
+                  "});",
+                  "pm.environment.set(\"bookingPnr\", pnr);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Booking - Seat Count Mismatch",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{booking_base}}/bookings/create"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"flightId\": \"{{flightId}}\",\n  \"userId\": \"{{userId}}\",\n  \"seatsBooked\": 2,\n  \"mealType\": \"VEG\",\n  \"flightType\": \"ONE_WAY\",\n  \"passengers\": [\n    {\n      \"name\": \"John Doe\",\n      \"gender\": \"M\",\n      \"age\": 30,\n      \"seatNumber\": \"A1\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", function () { pm.response.to.have.status(400); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Seat count business error\", function () {",
+                  "  pm.expect(json.error).to.match(/Passengers count must be equal to seats booked/i);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Booking - Duplicate Seats In Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{booking_base}}/bookings/create"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"flightId\": \"{{flightId}}\",\n  \"userId\": \"{{userId}}\",\n  \"seatsBooked\": 2,\n  \"mealType\": \"VEG\",\n  \"flightType\": \"ONE_WAY\",\n  \"passengers\": [\n    {\n      \"name\": \"P1\",\n      \"gender\": \"M\",\n      \"age\": 25,\n      \"seatNumber\": \"A1\"\n    },\n    {\n      \"name\": \"P2\",\n      \"gender\": \"F\",\n      \"age\": 24,\n      \"seatNumber\": \"A1\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 400\", function () { pm.response.to.have.status(400); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Duplicate seat error\", function () {",
+                  "  pm.expect(json.error).to.match(/Duplicate seat in request/i);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Booking By PNR - Valid",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{booking_base}}/bookings/get/{{bookingPnr}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"PNR matches env\", function () {",
+                  "  pm.expect(json.pnr).to.eql(pm.environment.get(\"bookingPnr\"));",
+                  "});",
+                  "pm.environment.set(\"bookingUserId\", json.userId);",
+                  "pm.environment.set(\"bookingFlightId\", json.flightId);",
+                  "pm.environment.set(\"bookingId_internal\", json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Booking By PNR - Not Found",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{booking_base}}/bookings/get/INVALIDPNR"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", function () { pm.response.to.have.status(404); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"PNR not found error\", function () {",
+                  "  pm.expect(json.error).to.match(/pnr not found/i);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Booking History - By User Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{booking_base}}/bookings/history/user/{{userId}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Array of bookings\", function () {",
+                  "  pm.expect(json).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Booking History - By Email",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{booking_base}}/bookings/history/email/{{userEmail}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Array of bookings\", function () {",
+                  "  pm.expect(json).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Booking History - By Email Not Found",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{booking_base}}/bookings/history/email/unknown@example.com"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 4xx\", function () {",
+                  "  pm.expect([400,404]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel Booking - Valid (PNR from previous booking)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{booking_base}}/bookings/cancel/{{bookingPnr}}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancel Booking - Invalid PNR",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{booking_base}}/bookings/cancel/INVALIDPNR"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 404\", function () { pm.response.to.have.status(404); });",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Invalid PNR error\", function () {",
+                  "  pm.expect(json.error).to.match(/invalid pnr/i);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "API Gateway (8080)",
+      "item": [
+        {
+          "name": "Airline via Gateway",
+          "item": [
+            {
+              "name": "GW - Create Airline - Valid",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gateway_base}}/airline-service/airlines"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"GWAI\",\n  \"name\": \"Gateway Air\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
+                      "const json = pm.response.json();",
+                      "pm.test(\"Airline via GW created\", function () {",
+                      "  pm.expect(json.code).to.eql(\"GWAI\");",
+                      "});",
+                      "pm.environment.set(\"gwAirlineCode\", json.code);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "GW - Get Airline - Valid",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gateway_base}}/airline-service/airlines/{{gwAirlineCode}}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "User via Gateway",
+          "item": [
+            {
+              "name": "GW - Create User - Valid",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gateway_base}}/user-service/users"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"GW User\",\n  \"email\": \"gw.user@example.com\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
+                      "const json = pm.response.json();",
+                      "pm.environment.set(\"gwUserId\", json.id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "GW - Get User - Valid",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gateway_base}}/user-service/users/{{gwUserId}}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Flight via Gateway",
+          "item": [
+            {
+              "name": "GW - Add Flight - Valid",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gateway_base}}/flight-service/flights/add"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"airlineCode\": \"GWAI\",\n  \"flightNumber\": \"GW101\",\n  \"fromCity\": \"DEL\",\n  \"toCity\": \"BOM\",\n  \"departureTime\": \"2030-02-01T10:00:00\",\n  \"arrivalTime\": \"2030-02-01T12:00:00\",\n  \"totalSeats\": 150,\n  \"availableSeats\": 0,\n  \"price\": 4500,\n  \"status\": \"SCHEDULED\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
+                      "const json = pm.response.json();",
+                      "pm.environment.set(\"gwFlightId\", json.id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "GW - Search Flights",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gateway_base}}/flight-service/flights/search"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"fromCity\": \"DEL\",\n  \"toCity\": \"BOM\",\n  \"date\": \"2030-02-01\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Passenger via Gateway",
+          "item": [
+            {
+              "name": "GW - Create Passenger - Valid",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gateway_base}}/passenger-service/passengers"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"GW Passenger\",\n  \"gender\": \"M\",\n  \"age\": 28,\n  \"seatNumber\": \"B1\",\n  \"bookingId\": \"GWBOOK1\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "GW - Get Passengers By Booking",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{gateway_base}}/passenger-service/passengers/booking/GWBOOK1"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Booking via Gateway",
+          "item": [
+            {
+              "name": "GW - Create Booking - Sample (IDs must exist)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{gateway_base}}/booking-service/bookings/create"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"flightId\": \"{{flightId}}\",\n  \"userId\": \"{{userId}}\",\n  \"seatsBooked\": 1,\n  \"mealType\": \"VEG\",\n  \"flightType\": \"ONE_WAY\",\n  \"passengers\": [\n    {\n      \"name\": \"GW John\",\n      \"gender\": \"M\",\n      \"age\": 30,\n      \"seatNumber\": \"C1\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status 201 or 400\", function () {",
+                      "  pm.expect([201,400]).to.include(pm.response.code);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "airline_base",
+      "value": "http://localhost:9001"
+    },
+    {
+      "key": "user_base",
+      "value": "http://localhost:9002"
+    },
+    {
+      "key": "flight_base",
+      "value": "http://localhost:9003"
+    },
+    {
+      "key": "booking_base",
+      "value": "http://localhost:9004"
+    },
+    {
+      "key": "passenger_base",
+      "value": "http://localhost:9005"
+    },
+    {
+      "key": "gateway_base",
+      "value": "http://localhost:8080"
+    }
+  ]
+}

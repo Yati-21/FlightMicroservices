@@ -11,8 +11,8 @@ import com.booking.service.dto.PassengerDto;
 @FeignClient(name = "passenger-service")
 public interface PassengerClient {
 
-    @PostMapping("/passengers")
-    String createPassenger(@RequestBody PassengerCreateRequest req);
+	@PostMapping(value = "/internal/passengers", headers = "X-Internal-Call=booking-service")
+	String createPassenger(@RequestBody PassengerCreateRequest req);
 
     @GetMapping("/passengers/booking/{bookingId}")
     List<PassengerDto> getPassengersByBooking(@PathVariable("bookingId") String bookingId);

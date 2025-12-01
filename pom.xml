@@ -1,0 +1,72 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.flight</groupId>
+    <artifactId>flight-microservices</artifactId>
+    <version>1.0.0</version>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>api-gateway</module>
+        <module>passenger-service</module>
+        <module>booking-service</module>
+        <module>flight-service</module>
+        <module>airline-service</module>
+        <module>user-service</module>
+        <module>config-server</module>
+        <module>service-registry</module>
+    </modules>
+
+    <properties>
+        <java.version>17</java.version>
+        <jacoco.version>0.8.12</jacoco.version>
+    </properties>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+
+                <!-- Global Jacoco definition for all microservices -->
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${jacoco.version}</version>
+
+                    <executions>
+
+                        <!-- Attach agent -->
+                        <execution>
+                            <id>prepare-agent</id>
+                            <goals>
+                                <goal>prepare-agent</goal>
+                            </goals>
+                        </execution>
+
+                        <!-- Per-module report -->
+                        <execution>
+                            <id>report</id>
+                            <phase>test</phase>
+                            <goals>
+                                <goal>report</goal>
+                            </goals>
+                        </execution>
+
+                        <!-- Aggregated report for ALL microservices -->
+                        <execution>
+                            <id>aggregate-report</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>report-aggregate</goal>
+                            </goals>
+                        </execution>
+
+                    </executions>
+                </plugin>
+
+            </plugins>
+        </pluginManagement>
+    </build>
+
+</project>

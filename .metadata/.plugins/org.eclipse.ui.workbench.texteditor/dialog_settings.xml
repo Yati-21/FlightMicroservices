@@ -4,14 +4,14 @@
 	<section name="java.lang.Class">
 		<item key="replaceBarOpen" value="true"/>
 		<list key="findhistory">
+			<item value="jacoco"/>
+			<item value="jac"/>
 			<item value="plugin"/>
 			<item value="lombok"/>
 			<item value="lom"/>
-			<item value="jac"/>
 			<item value="jacoc"/>
 			<item value="plug"/>
 			<item value="jaco"/>
-			<item value="jacoco"/>
 			<item value="when(passengerClient.getPassengersByBooking(&quot;B1&quot;))"/>
 			<item value="when(userClient.getUserById(&quot;U1&quot;))"/>
 			<item value="thenThrow(new RuntimeException(&quot;User service 404&quot;));"/>
