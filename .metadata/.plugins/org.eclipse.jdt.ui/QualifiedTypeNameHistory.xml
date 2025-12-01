@@ -37,11 +37,13 @@
     <fullyQualifiedTypeName name="org.springframework.http.HttpStatusCode"/>
     <fullyQualifiedTypeName name="org.springframework.beans.factory.annotation.Autowired"/>
     <fullyQualifiedTypeName name="com.booking.service.kafka.KafkaProducer"/>
-    <fullyQualifiedTypeName name="org.springframework.kafka.core.KafkaTemplate"/>
     <fullyQualifiedTypeName name="com.booking.service.event.BookingCreatedEvent"/>
     <fullyQualifiedTypeName name="lombok.RequiredArgsConstructor"/>
     <fullyQualifiedTypeName name="org.springframework.kafka.support.serializer.JsonDeserializer"/>
     <fullyQualifiedTypeName name="org.springframework.kafka.annotation.EnableKafka"/>
     <fullyQualifiedTypeName name="com.notification.service.service.EmailService"/>
     <fullyQualifiedTypeName name="com.notification.service.event.BookingCreatedEvent"/>
+    <fullyQualifiedTypeName name="org.springframework.kafka.core.KafkaTemplate"/>
+    <fullyQualifiedTypeName name="com.flight.service.exception.AirlineServiceUnavailableException"/>
+    <fullyQualifiedTypeName name="lombok.extern.slf4j.Slf4j"/>
 </qualifiedTypeNameHistroy>
