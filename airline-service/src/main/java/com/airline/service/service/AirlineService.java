@@ -9,13 +9,13 @@ import reactor.core.publisher.Mono;
 
 public interface AirlineService {
 
-    Mono<Airline> createAirline(AirlineCreateRequest req);
+	Mono<Airline> createAirline(AirlineCreateRequest req);
 
-    Mono<Airline> getAirline(String code);
+	Mono<Airline> getAirline(String code);
 
-    Flux<Airline> getAllAirlines();
+	Flux<Airline> getAllAirlines();
 
-    Mono<Airline> updateAirline(String code, AirlineUpdateRequest req);
+	Mono<Airline> updateAirline(String code, AirlineUpdateRequest req);
 
-    Mono<Void> deleteAirline(String code);
+	Mono<Void> deleteAirline(String code);
 }

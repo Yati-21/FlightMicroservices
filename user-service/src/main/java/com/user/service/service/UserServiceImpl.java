@@ -14,6 +14,7 @@ import reactor.core.publisher.Mono;
 @Service
 public class UserServiceImpl implements UserService {
 
+	private static final String USER_NOT_FOUND = "User not found";
 	private final UserRepository repo;
 
 	public UserServiceImpl(UserRepository repo) {
@@ -30,24 +31,23 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public Mono<User> getUser(String id) {
-		return repo.findById(id).switchIfEmpty(Mono.error(new NotFoundException("User not found")));
+		return repo.findById(id).switchIfEmpty(Mono.error(new NotFoundException(USER_NOT_FOUND)));
 	}
 
 	@Override
 	public Mono<User> getByEmail(String email) {
 		return repo.findByEmail(email)
-				.switchIfEmpty(Mono.error(new NotFoundException("User not found with email: " + email)));
+				.switchIfEmpty(Mono.error(new NotFoundException(USER_NOT_FOUND + " with email: " + email)));
 	}
 
 	@Override
 	public Mono<User> updateUser(String id, UserUpdateRequest req) {
 
-		return repo.findById(id).switchIfEmpty(Mono.error(new NotFoundException("User not found")))
-				.flatMap(existing -> {
-					existing.setName(req.getName());
-					existing.setEmail(req.getEmail());
-					return repo.save(existing);
-				});
+		return repo.findById(id).switchIfEmpty(Mono.error(new NotFoundException(USER_NOT_FOUND))).flatMap(existing -> {
+			existing.setName(req.getName());
+			existing.setEmail(req.getEmail());
+			return repo.save(existing);
+		});
 	}
 
 	@Override
@@ -57,7 +57,6 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public Mono<Void> deleteUser(String id) {
-		return repo.findById(id).switchIfEmpty(Mono.error(new NotFoundException("User not found")))
-				.flatMap(repo::delete);
+		return repo.findById(id).switchIfEmpty(Mono.error(new NotFoundException(USER_NOT_FOUND))).flatMap(repo::delete);
 	}
 }

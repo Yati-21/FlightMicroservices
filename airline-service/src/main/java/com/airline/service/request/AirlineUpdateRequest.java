@@ -6,6 +6,6 @@ import lombok.Data;
 @Data
 public class AirlineUpdateRequest {
 
-    @NotBlank(message = "Airline name is required")
-    private String name;
+	@NotBlank(message = "Airline name is required")
+	private String name;
 }

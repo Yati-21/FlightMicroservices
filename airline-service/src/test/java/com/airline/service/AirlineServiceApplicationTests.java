@@ -8,7 +8,7 @@ class AirlineServiceApplicationTests {
 
 	@Test
 	void contextLoads() {
-		// Verify Spring app context loads
+		// verify Spring app context loads
 	}
 
 }
