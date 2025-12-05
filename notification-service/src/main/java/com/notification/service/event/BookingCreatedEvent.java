@@ -11,9 +11,9 @@ public class BookingCreatedEvent
 {
 	//for notification service
     private String pnr;
-    private String userEmail;
+    private String message;
     private String userName;
+    private String userEmail;
     private String flightId;
     private int seatsBooked;
-    private String message;
 }
