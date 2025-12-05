@@ -15,6 +15,10 @@ import reactor.core.publisher.Mono;
 public class GlobalErrorHandler {
 
 	private static final String ERROR = "error";
+	@ExceptionHandler(NotFoundException.class)
+	public Mono<ResponseEntity<Map<String, String>>> handleNotFound(NotFoundException ex) {
+		return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(ERROR, ex.getMessage())));
+	}
 
 	@ExceptionHandler(WebExchangeBindException.class)
 	public Mono<ResponseEntity<Map<String, Object>>> handleValidationErrors(WebExchangeBindException ex) {
@@ -26,18 +30,13 @@ public class GlobalErrorHandler {
 		return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response));
 	}
 
-	@ExceptionHandler(NotFoundException.class)
-	public Mono<ResponseEntity<Map<String, String>>> handleNotFound(NotFoundException ex) {
-		return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(ERROR, ex.getMessage())));
+	@ExceptionHandler(BusinessException.class)
+	public Mono<ResponseEntity<Map<String, String>>> handleBusiness(BusinessException ex) {
+		return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(ERROR, ex.getMessage())));
 	}
 
 	@ExceptionHandler(SeatUnavailableException.class)
 	public Mono<ResponseEntity<Map<String, String>>> handleSeatUnavailable(SeatUnavailableException ex) {
-		return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(ERROR, ex.getMessage())));
-	}
-
-	@ExceptionHandler(BusinessException.class)
-	public Mono<ResponseEntity<Map<String, String>>> handleBusiness(BusinessException ex) {
 		return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(ERROR, ex.getMessage())));
 	}
 
