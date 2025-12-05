@@ -194,13 +194,13 @@ public class BookingServiceImpl implements BookingService {
 	private Mono<List<String>> savePassengersReactive(String bookingId, List<PassengerRequest> passengers) {
 
 		return Flux.fromIterable(passengers).flatMap(req -> {
-			Passenger p = new Passenger();
-			p.setName(req.getName());
-			p.setGender(req.getGender());
-			p.setAge(req.getAge());
-			p.setSeatNumber(req.getSeatNumber());
-			p.setBookingId(bookingId);
-			return passengerRepo.save(p);
+			Passenger passenger = new Passenger();
+			passenger.setName(req.getName());
+			passenger.setGender(req.getGender());
+			passenger.setAge(req.getAge());
+			passenger.setSeatNumber(req.getSeatNumber());
+			passenger.setBookingId(bookingId);
+			return passengerRepo.save(passenger);
 		}).map(Passenger::getId).collectList();
 	}
 }

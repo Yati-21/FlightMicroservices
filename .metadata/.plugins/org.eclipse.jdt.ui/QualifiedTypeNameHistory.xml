@@ -33,7 +33,6 @@
     <fullyQualifiedTypeName name="com.booking.service.request.PassengerRequest"/>
     <fullyQualifiedTypeName name="com.booking.service.entity.Passenger"/>
     <fullyQualifiedTypeName name="java.lang.Object"/>
-    <fullyQualifiedTypeName name="org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreakerFactory"/>
     <fullyQualifiedTypeName name="org.springframework.http.HttpStatusCode"/>
     <fullyQualifiedTypeName name="org.springframework.beans.factory.annotation.Autowired"/>
     <fullyQualifiedTypeName name="com.booking.service.kafka.KafkaProducer"/>
@@ -46,4 +45,10 @@
     <fullyQualifiedTypeName name="org.springframework.kafka.core.KafkaTemplate"/>
     <fullyQualifiedTypeName name="com.flight.service.exception.AirlineServiceUnavailableException"/>
     <fullyQualifiedTypeName name="lombok.extern.slf4j.Slf4j"/>
+    <fullyQualifiedTypeName name="org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreakerFactory"/>
+    <fullyQualifiedTypeName name="com.user.service.exception.BusinessException"/>
+    <fullyQualifiedTypeName name="org.springframework.context.annotation.Configuration"/>
+    <fullyQualifiedTypeName name="org.springframework.context.annotation.Bean"/>
+    <fullyQualifiedTypeName name="org.springframework.cloud.client.loadbalancer.LoadBalanced"/>
+    <fullyQualifiedTypeName name="org.springframework.web.reactive.function.client.WebClient"/>
 </qualifiedTypeNameHistroy>

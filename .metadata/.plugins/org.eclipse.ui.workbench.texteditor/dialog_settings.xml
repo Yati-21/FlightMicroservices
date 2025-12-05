@@ -4,6 +4,7 @@
 	<section name="java.lang.Class">
 		<item key="replaceBarOpen" value="true"/>
 		<list key="findhistory">
+			<item value="kafkaTemplate.send"/>
 			<item value="Jay"/>
 			<item value="Riya"/>
 			<item value="ex"/>
@@ -18,7 +19,6 @@
 			<item value="@CircuitBreaker"/>
 			<item value="CircuitBreaker"/>
 			<item value="mail"/>
-			<item value="kafka"/>
 		</list>
 		<list key="replacehistory">
 			<item value="jay"/>
